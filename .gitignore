@@ -2,3 +2,5 @@
 *.pth
 *.json
 models
+venv*
+__pycache__

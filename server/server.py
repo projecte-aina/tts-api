@@ -7,7 +7,11 @@ import sys
 from pathlib import Path
 from typing import Union
 
-from flask import Flask, render_template, request, send_file
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+import uvicorn
 
 from TTS.config import load_config
 from TTS.utils.manage import ModelManager
@@ -118,7 +122,10 @@ use_multi_speaker = hasattr(synthesizer.tts_model, "num_speakers") and (
 speaker_manager = getattr(synthesizer.tts_model, "speaker_manager", None)
 # TODO: set this from SpeakerManager
 use_gst = synthesizer.tts_config.get("use_gst", False)
-app = Flask(__name__)
+app = FastAPI()
+# in principle we don't serve static files now but we might
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 
 def style_wav_uri_to_dict(style_wav: str) -> Union[str, dict]:
@@ -140,50 +147,50 @@ def style_wav_uri_to_dict(style_wav: str) -> Union[str, dict]:
     return None
 
 
-@app.route("/")
-def index():
-    return render_template(
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse(
         "index.html",
-        show_details=args.show_details,
-        use_multi_speaker=use_multi_speaker,
-        speaker_ids=speaker_manager.ids if speaker_manager is not None else None,
-        use_gst=use_gst,
+        {"request": request,
+         "show_details":args.show_details,
+         "use_multi_speaker":use_multi_speaker,
+         "speaker_ids":speaker_manager.ids if speaker_manager is not None else None,
+         "use_gst":use_gst}
     )
 
 
-@app.route("/details")
-def details():
-    model_config = load_config(args.tts_config)
-    if args.vocoder_config is not None and os.path.isfile(args.vocoder_config):
-        vocoder_config = load_config(args.vocoder_config)
+@app.get("/details", response_class=HTMLResponse)
+async def details(request: Request):
+    model_config = load_config(args.config_path)
+    if args.vocoder_config_path is not None and os.path.isfile(args.vocoder_config_path):
+        vocoder_config = load_config(args.vocoder_config_path)
     else:
         vocoder_config = None
 
-    return render_template(
+    return templates.TemplateResponse(
         "details.html",
-        show_details=args.show_details,
-        model_config=model_config,
-        vocoder_config=vocoder_config,
-        args=args.__dict__,
+        {"request": request,
+         "show_details": args.show_details,
+         "model_config": model_config,
+         "vocoder_config": vocoder_config,
+         "args": args.__dict__}
     )
 
 
-@app.route("/api/tts", methods=["GET"])
-def tts():
-    text = request.args.get("text")
-    speaker_idx = request.args.get("speaker_id", "")
-    style_wav = request.args.get("style_wav", "")
+@app.get("/api/tts")
+async def tts(text: str, speaker_id: str, style_wav: str):
     style_wav = style_wav_uri_to_dict(style_wav)
     print(" > Model input: {}".format(text))
-    print(" > Speaker Idx: {}".format(speaker_idx))
-    wavs = synthesizer.tts(text, speaker_name=speaker_idx, style_wav=style_wav)
+    print(" > Speaker Idx: {}".format(speaker_id))
+    wavs = synthesizer.tts(text, speaker_name=speaker_id, style_wav=style_wav)
     out = io.BytesIO()
     synthesizer.save_wav(wavs, out)
-    return send_file(out, mimetype="audio/wav")
+    print({"text": text, "speaker_idx": speaker_id, "style_wav": style_wav})
+    return StreamingResponse(out, media_type="audio/wav")
 
 
 def main():
-    app.run(debug=args.debug, host="::", port=args.port)
+    uvicorn.run('server:app', host='0.0.0.0', port=8000)
 
 
 if __name__ == "__main__":
