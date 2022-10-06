@@ -97,6 +97,7 @@ if args.model_path is not None:
     model_path = args.model_path
     config_path = args.config_path
     speakers_file_path = args.speakers_file_path
+    speaker_ids_path = args.config_path.replace('config','speaker_ids')
 
 if args.vocoder_path is not None:
     vocoder_path = args.vocoder_path
@@ -120,6 +121,8 @@ use_multi_speaker = hasattr(synthesizer.tts_model, "num_speakers") and (
 )
 
 speaker_manager = getattr(synthesizer.tts_model, "speaker_manager", None)
+if speaker_manager:
+    new_speaker_ids = json.load(open(speaker_ids_path))
 # TODO: set this from SpeakerManager
 use_gst = synthesizer.tts_config.get("use_gst", False)
 app = FastAPI()
@@ -154,7 +157,8 @@ async def index(request: Request):
         {"request": request,
          "show_details":args.show_details,
          "use_multi_speaker":use_multi_speaker,
-         "speaker_ids":speaker_manager.ids if speaker_manager is not None else None,
+         #"speaker_ids":speaker_manager.ids if speaker_manager is not None else None,
+         "speaker_ids":new_speaker_ids if speaker_manager is not None else None,
          "use_gst":use_gst}
     )
 
@@ -182,7 +186,7 @@ async def tts(text: str, speaker_id: str, style_wav: str):
     style_wav = style_wav_uri_to_dict(style_wav)
     print(" > Model input: {}".format(text))
     print(" > Speaker Idx: {}".format(speaker_id))
-    wavs = synthesizer.tts(text, speaker_name=speaker_id, style_wav=style_wav)
+    wavs = synthesizer.tts(text, speaker_name=new_speaker_ids[speaker_id], style_wav=style_wav)
     out = io.BytesIO()
     synthesizer.save_wav(wavs, out)
     print({"text": text, "speaker_idx": speaker_id, "style_wav": style_wav})
