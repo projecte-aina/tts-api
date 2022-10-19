@@ -66,6 +66,7 @@ def create_argparser():
 args = create_argparser().parse_args()
 
 path = Path(__file__).parent / ".models.json"
+path_dir = os.path.dirname(path)
 manager = ModelManager(path)
 
 if args.list_models:
@@ -127,8 +128,8 @@ if speaker_manager:
 use_gst = synthesizer.tts_config.get("use_gst", False)
 app = FastAPI()
 # in principle we don't serve static files now but we might
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory=os.path.join(path_dir,"static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(path_dir,"templates"))
 
 
 def style_wav_uri_to_dict(style_wav: str) -> Union[str, dict]:
