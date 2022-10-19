@@ -16,7 +16,7 @@ Later simply:
 python -m pip install --upgrade pip
 ```
 
-In order to synthesize, the actual model needs to be downloaded and the paths in the config file need to be changed (replacing `/opt` with the top directory of the repository). The model can be downloaded from `https:share.laklak.eu/model_vits_ca/best_model.pth` to the models directory.
+In order to synthesize, the actual model needs to be downloaded and the paths in the config file need to be changed (replacing `/opt` with the top directory of the repository). The model can be downloaded from [http://share.laklak.eu/model_vits_ca/best_model.pth](http://share.laklak.eu/model_vits_ca/best_model.pth) to the models directory.
 
 ## Launch
 
