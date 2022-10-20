@@ -23,8 +23,13 @@ In order to synthesize, the actual model needs to be downloaded and the paths in
 tts-api uses `FastAPI` and `uvicorn` under the hood. For now, in order to launch:
 
 ```
-python server/server.py --model_path models/vits_ca/best_model.pth --config_path models/vits_ca/config.json
+python server/server.py --model_path models/vits_ca/best_model.pth --config_path models/vits_ca/config.json --port 8001
 ```
+that receives the calls from '0.0.0.0:8000', or simply
+```
+python server/server.py
+```
+which gets the calls from `0.0.0.0:8000` by default
 
 ## Docker Install and launch
 
@@ -35,10 +40,9 @@ docker build -t tts-api .
 
 To launch:
 ```
-docker run --name tts -p 8000:8000 tts-api
+docker run --name tts -p 8001:8001 tts-api --port 8001
 ```
-
-The web application should appear in http://0.0.0.0:8000/
+The default entrypoint puts the web interface to `http://0.0.0.0:8000/`.
 
 ## Authors and acknowledgment
 Developed by TeMU BSC. The code is based on Coqui TTS server.py that has a Mozilla Public License 2.0.
@@ -46,6 +50,7 @@ Developed by TeMU BSC. The code is based on Coqui TTS server.py that has a Mozil
 ## License
 
 ## Project status
-[x] Conteinerized
-[] Improved endpoints
-[] Improved models
+
+- [x] Conteinerized
+- [ ] Improved endpoints
+- [ ] Improved models
