@@ -17,6 +17,15 @@ from TTS.config import load_config
 from TTS.utils.manage import ModelManager
 from TTS.utils.synthesizer import Synthesizer
 
+# global path variables
+path = Path(__file__).parent / ".models.json"
+path_dir = os.path.dirname(path)
+manager = ModelManager(path)
+
+# default tts model/files
+models_path_rel = '../models/vits_ca'
+model_ca = os.path.join(path_dir, models_path_rel, 'best_model.pth')
+config_ca = os.path.join(path_dir, models_path_rel, 'config.json')
 
 def create_argparser():
     def convert_boolean(x):
@@ -40,11 +49,14 @@ def create_argparser():
     parser.add_argument("--vocoder_name", type=str, default=None, help="name of one of the released vocoder models.")
 
     # Args for running custom models
-    parser.add_argument("--config_path", default=None, type=str, help="Path to model config file.")
+    parser.add_argument("--config_path",
+        default=config_ca,
+        type=str,
+        help="Path to model config file.")
     parser.add_argument(
         "--model_path",
         type=str,
-        default=None,
+        default=model_ca,
         help="Path to model file.",
     )
     parser.add_argument(
@@ -55,7 +67,8 @@ def create_argparser():
     )
     parser.add_argument("--vocoder_config_path", type=str, help="Path to vocoder model config file.", default=None)
     parser.add_argument("--speakers_file_path", type=str, help="JSON file for multi-speaker model.", default=None)
-    parser.add_argument("--port", type=int, default=5002, help="port to listen on.")
+    parser.add_argument("--port", type=int, default=8000, help="port to listen on.")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="host ip to listen.")
     parser.add_argument("--use_cuda", type=convert_boolean, default=False, help="true to use CUDA.")
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
@@ -64,10 +77,6 @@ def create_argparser():
 
 # parse the args
 args = create_argparser().parse_args()
-
-path = Path(__file__).parent / ".models.json"
-path_dir = os.path.dirname(path)
-manager = ModelManager(path)
 
 if args.list_models:
     manager.list_models()
@@ -98,7 +107,7 @@ if args.model_path is not None:
     model_path = args.model_path
     config_path = args.config_path
     speakers_file_path = args.speakers_file_path
-    speaker_ids_path = args.config_path.replace('config','speaker_ids')
+    speaker_ids_path = os.path.join(path_dir, models_path_rel, 'speaker_ids.json')
 
 if args.vocoder_path is not None:
     vocoder_path = args.vocoder_path
@@ -193,10 +202,8 @@ async def tts(text: str, speaker_id: str, style_wav: str):
     print({"text": text, "speaker_idx": speaker_id, "style_wav": style_wav})
     return StreamingResponse(out, media_type="audio/wav")
 
-
 def main():
-    uvicorn.run('server:app', host='0.0.0.0', port=8000)
-
+    uvicorn.run('server:app', host=args.host, port=args.port)
 
 if __name__ == "__main__":
     main()

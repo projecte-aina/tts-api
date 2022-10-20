@@ -8,4 +8,4 @@ RUN python -m pip install --no-cache-dir --upgrade -r /opt/requirements.txt
 
 COPY . /opt/tts-api
 
-CMD ["python", "tts-api/server/server.py", "--model_path", "tts-api/models/vits_ca/best_model.pth", "--config_path", "tts-api/models/vits_ca/config.json"]
+ENTRYPOINT ["python", "tts-api/server/server.py"]
