@@ -1,0 +1,16 @@
+apiVersion: v2
+name: aina-tts-api
+version: 0.1.0
+description: RestFUL api and web interface to serve coqui TTS models
+
+home: https://github.com/projecte-aina/tts-api
+keywords:
+  - ai
+  - tts
+  - coqui
+  - cat
+maintainers:
+  - name: Projecte Aina
+    email: aina@bsc.es
+sources: 
+  - https://github.com/projecte-aina/tts-api

@@ -1,0 +1,6 @@
+global:
+  namespace: apps
+
+api:
+  image: tts-api
+  tag: latest
