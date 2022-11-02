@@ -63,6 +63,25 @@ make deploy speed=1.6
 
 The example docker-compose file shows also the build-arg usage for the speed parameter.
 
+## Deployment via Helm
+
+The chart is still not available on any repository so you need to run this command from the repository folder.
+Please, keep in mind that if you are deploying this chart to a cloud K8s instance you need to push the Docker image first
+to an image registry.
+
+```bash
+helm upgrade --install aina-tts-api --create-namespace .
+```
+
+You can either change the values on `values.yaml` or override them.
+
+```bash
+helm upgrade --install aina-tts-api --create-namespace \
+  --set global.namespace=apps \
+  --set api.image=tts-api \
+  --set api.tag=latest .
+```
+
 ## Authors and acknowledgment
 Developed by TeMU BSC. The code is based on Coqui TTS server.py that has a Mozilla Public License 2.0.
 

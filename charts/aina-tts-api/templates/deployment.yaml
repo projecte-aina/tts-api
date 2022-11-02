@@ -20,4 +20,3 @@ spec:
           imagePullPolicy: {{ default "IfNotPresent" .Values.pullPolicy }}
           ports:
             - containerPort: 8000
-            - containerPort: 8001
