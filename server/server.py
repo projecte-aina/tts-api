@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Union
 
-from fastapi import FastAPI, Request, HTTPException, Query
+from fastapi import FastAPI, Request, Query
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
