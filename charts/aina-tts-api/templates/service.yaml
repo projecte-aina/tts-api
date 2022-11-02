@@ -7,13 +7,9 @@ metadata:
     component: tts-api
 spec:
   ports:
-    - name: web
+    - name: api
       protocol: TCP
       port: 8000
       targetPort: 8000
-    - name: api
-      protocol: TCP
-      port: 8001
-      targetPort: 8001
   selector:
     component: tts-api
