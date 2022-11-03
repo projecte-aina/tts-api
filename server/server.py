@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Union
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -16,6 +16,7 @@ import uvicorn
 from TTS.config import load_config
 from TTS.utils.manage import ModelManager
 from TTS.utils.synthesizer import Synthesizer
+from starlette.responses import JSONResponse
 
 # global path variables
 path = Path(__file__).parent / ".models.json"
@@ -159,6 +160,16 @@ def style_wav_uri_to_dict(style_wav: str) -> Union[str, dict]:
         return style_wav  # style_wav is a gst dictionary with {token1_id : token1_weigth, ...}
     return None
 
+class SpeakerException(Exception):
+    def __init__(self, speaker_id: str):
+        self.speaker_id = speaker_id
+
+@app.exception_handler(SpeakerException)
+async def speaker_exception_handler(request: Request, exc: SpeakerException):
+    return JSONResponse(
+        status_code=406,
+        content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(new_speaker_ids.keys())},
+    )
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -192,14 +203,16 @@ async def details(request: Request):
 
 
 @app.get("/api/tts")
-async def tts(text: str, speaker_id: str, style_wav: str):
-    style_wav = style_wav_uri_to_dict(style_wav)
+async def tts(speaker_id: str, text: str = Query(min_length=1)):
+    if speaker_id not in new_speaker_ids.keys():
+        raise SpeakerException(speaker_id=speaker_id)
+    # style_wav = style_wav_uri_to_dict(style_wav)
     print(" > Model input: {}".format(text))
     print(" > Speaker Idx: {}".format(speaker_id))
-    wavs = synthesizer.tts(text, speaker_name=new_speaker_ids[speaker_id], style_wav=style_wav)
+    wavs = synthesizer.tts(text, speaker_name=new_speaker_ids[speaker_id])
     out = io.BytesIO()
     synthesizer.save_wav(wavs, out)
-    print({"text": text, "speaker_idx": speaker_id, "style_wav": style_wav})
+    print({"text": text, "speaker_idx": speaker_id})
     return StreamingResponse(out, media_type="audio/wav")
 
 def main():
