@@ -44,6 +44,10 @@ docker run --name tts -p 8001:8001 tts-api --port 8001
 ```
 The default entrypoint puts the web interface to `http://0.0.0.0:8000/`.
 
+#### Deployment with docker compose
+```bash
+docker compose up -d --build
+```
 ## Authors and acknowledgment
 Developed by TeMU BSC. The code is based on Coqui TTS server.py that has a Mozilla Public License 2.0.
 
