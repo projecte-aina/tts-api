@@ -160,6 +160,16 @@ def style_wav_uri_to_dict(style_wav: str) -> Union[str, dict]:
         return style_wav  # style_wav is a gst dictionary with {token1_id : token1_weigth, ...}
     return None
 
+class SpeakerException(Exception):
+    def __init__(self, speaker_id: str):
+        self.speaker_id = speaker_id
+
+@app.exception_handler(SpeakerException)
+async def speaker_exception_handler(request: Request, exc: SpeakerException):
+    return JSONResponse(
+        status_code=406,
+        content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(new_speaker_ids.keys())},
+    )
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -195,10 +205,7 @@ async def details(request: Request):
 @app.get("/api/tts")
 async def tts(speaker_id: str, text: str = Query(min_length=1)):
     if speaker_id not in new_speaker_ids.keys():
-        return JSONResponse(
-            status_code=406,
-            content={"message": f"Client did not request a supported media type.", "accept": list(new_speaker_ids.keys())},
-        )
+        raise SpeakerException(speaker_id=speaker_id)
     # style_wav = style_wav_uri_to_dict(style_wav)
     print(" > Model input: {}".format(text))
     print(" > Speaker Idx: {}".format(speaker_id))
