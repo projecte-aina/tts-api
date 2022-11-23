@@ -147,6 +147,13 @@ use_multi_speaker = hasattr(synthesizer.tts_model, "num_speakers") and (
 speaker_manager = getattr(synthesizer.tts_model, "speaker_manager", None)
 if speaker_manager:
     new_speaker_ids = json.load(open(speaker_ids_path))
+
+use_aliases = True
+if use_aliases:
+    speaker_ids = new_speaker_ids
+else:
+    speaker_ids = speaker_manager.ids
+
 # TODO: set this from SpeakerManager
 use_gst = synthesizer.tts_config.get("use_gst", False)
 app = FastAPI()
@@ -181,7 +188,7 @@ class SpeakerException(Exception):
 async def speaker_exception_handler(request: Request, exc: SpeakerException):
     return JSONResponse(
         status_code=406,
-        content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(new_speaker_ids.keys())},
+        content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(speaker_ids.keys())},
     )
 
 @app.get("/", response_class=HTMLResponse)
@@ -192,7 +199,7 @@ async def index(request: Request):
          "show_details":args.show_details,
          "use_multi_speaker":use_multi_speaker,
          #"speaker_ids":speaker_manager.ids if speaker_manager is not None else None,
-         "speaker_ids":new_speaker_ids if speaker_manager is not None else None,
+         "speaker_ids":speaker_ids if speaker_manager is not None else None,
          "use_gst":use_gst}
     )
 
@@ -217,12 +224,16 @@ async def details(request: Request):
 
 @app.get("/api/tts")
 async def tts(speaker_id: str, text: str = Query(min_length=1)):
-    if speaker_id not in new_speaker_ids.keys():
+    if speaker_id not in speaker_ids.keys():
         raise SpeakerException(speaker_id=speaker_id)
     # style_wav = style_wav_uri_to_dict(style_wav)
     print(" > Model input: {}".format(text))
     print(" > Speaker Idx: {}".format(speaker_id))
-    wavs = synthesizer.tts(text, speaker_name=new_speaker_ids[speaker_id])
+    if use_aliases:
+        input_speaker_id = new_speaker_ids[speaker_id]
+    else:
+        input_speaker_id = speaker_id
+    wavs = synthesizer.tts(text, speaker_name=input_speaker_id)
     out = io.BytesIO()
     synthesizer.save_wav(wavs, out)
     print({"text": text, "speaker_idx": speaker_id})
