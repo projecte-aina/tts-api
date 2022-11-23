@@ -3,7 +3,9 @@ services:
   tts-api:
     build:
       context: .
+      args:
+        speed: 1.6
     restart: unless-stopped
     ports:
-      - '8000:8000'
+      - '8080:8080'
       - '8001:8001'
