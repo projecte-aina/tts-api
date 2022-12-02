@@ -2,5 +2,5 @@ global:
   namespace: apps
 
 api:
-  image: tts-api
-  tag: latest
+  image: bsctemu/aina-tts-api
+  tag: 1.0.0

@@ -9,7 +9,7 @@ RUN python -m pip install --no-cache-dir --upgrade -r /opt/requirements.txt
 COPY . /opt/tts-api
 RUN wget -q http://share.laklak.eu/model_vits_ca/best_model.pth -P /opt/tts-api/models/vits_ca/
 
-ARG speed=1.0
-ENV speed $speed
+ARG speech_speed=1.0
+ENV speech_speed $speech_speed
 
-ENTRYPOINT python tts-api/server/server.py --speed $speed
+ENTRYPOINT python tts-api/server/server.py --speech_speed $speech_speed

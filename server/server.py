@@ -73,7 +73,7 @@ def create_argparser():
     parser.add_argument("--use_cuda", type=convert_boolean, default=False, help="true to use CUDA.")
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
-    parser.add_argument("--speed", type=float, default=1.0, help="Change speech speed.")
+    parser.add_argument("--speech_speed", type=float, default=1.0, help="Change speech speed.")
     return parser
 
 def update_config(config_path, velocity):
@@ -124,8 +124,8 @@ if args.vocoder_path is not None:
     vocoder_config_path = args.vocoder_config_path
 
 # CASE4: change speaker speed
-if args.speed != 1.0:
-    update_config(config_path, args.speed)
+if args.speech_speed != 1.0:
+    update_config(config_path, args.speech_speed)
 
 # load models
 synthesizer = Synthesizer(
