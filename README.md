@@ -51,9 +51,16 @@ docker run --name tts -p 8001:8001 tts-api --port 8001
 The default entrypoint puts the web interface to `http://0.0.0.0:8001/`.
 
 #### Deployment with docker compose
+
 ```bash
-docker compose up -d --build
+make deploy
 ```
+Example of deployment changing speech speed parameter
+
+```bash
+make deploy speed=1.6
+```
+
 The example docker-compose file shows also the build-arg usage for the speed parameter.
 
 ## Authors and acknowledgment
