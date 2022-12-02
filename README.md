@@ -50,8 +50,14 @@ The chart is still not available on any repository so you need to run this comma
 Please, keep in mind that if you are deploying this chart to a cloud K8s instance you need to push the Docker image first
 to an image registry.
 
+Create namespace
 ```bash
-helm upgrade --install aina-tts-api --create-namespace .
+kubectl create namespace apps
+```
+Deploy chart
+```bash
+#Run the following command from $BASE_REPO_PATH/charts/aina-tts-api path
+helm upgrade --install aina-tts-api --create-namespace . 
 ```
 
 You can either change the values on `values.yaml` or override them.
