@@ -10,6 +10,6 @@ COPY . /opt/tts-api
 RUN wget -q http://share.laklak.eu/model_vits_ca/best_model.pth -P /opt/tts-api/models/vits_ca/
 
 ARG speed=1.0
-ENV speed=${speed}
+ENV speed $speed
 
 ENTRYPOINT python tts-api/server/server.py --speed $speed
