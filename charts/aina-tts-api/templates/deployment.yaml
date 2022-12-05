@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tts-api
+  namespace: {{.Values.global.namespace}}
+  labels:
+    component: tts-api
+spec:
+  selector:
+    matchLabels:
+      component: tts-api
+  template:
+    metadata:
+      labels:
+        component: tts-api
+    spec:
+      containers:
+        - name: api
+          image: {{.Values.api.image}}:{{.Values.api.tag}}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.pullPolicy }}
+          ports:
+            - containerPort: 8000
