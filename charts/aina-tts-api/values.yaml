@@ -3,4 +3,5 @@ global:
 
 api:
   image: tts-api
-  tag: latest
+  tag: "latest"
+  speed: "1.0"
