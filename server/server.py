@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Union
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -16,6 +16,7 @@ import uvicorn
 from TTS.config import load_config
 from TTS.utils.manage import ModelManager
 from TTS.utils.synthesizer import Synthesizer
+from starlette.responses import JSONResponse
 
 # global path variables
 path = Path(__file__).parent / ".models.json"
@@ -72,8 +73,17 @@ def create_argparser():
     parser.add_argument("--use_cuda", type=convert_boolean, default=False, help="true to use CUDA.")
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
+    parser.add_argument("--speed", type=float, default=1.0, help="Change speech speed.")
     return parser
 
+def update_config(config_path, velocity):
+    length_scale = 1/velocity
+    with open(config_path, "r+") as json_file:
+        data = json.load(json_file)
+        data["model_args"]["length_scale"] = length_scale
+        json_file.seek(0)
+        json.dump(data, json_file, indent = 4)
+        json_file.truncate()
 
 # parse the args
 args = create_argparser().parse_args()
@@ -113,6 +123,10 @@ if args.vocoder_path is not None:
     vocoder_path = args.vocoder_path
     vocoder_config_path = args.vocoder_config_path
 
+# CASE4: change speaker speed
+if args.speed != 1.0:
+    update_config(config_path, args.speed)
+
 # load models
 synthesizer = Synthesizer(
     tts_checkpoint=model_path,
@@ -133,6 +147,13 @@ use_multi_speaker = hasattr(synthesizer.tts_model, "num_speakers") and (
 speaker_manager = getattr(synthesizer.tts_model, "speaker_manager", None)
 if speaker_manager:
     new_speaker_ids = json.load(open(speaker_ids_path))
+
+use_aliases = True
+if use_aliases:
+    speaker_ids = new_speaker_ids
+else:
+    speaker_ids = speaker_manager.ids
+
 # TODO: set this from SpeakerManager
 use_gst = synthesizer.tts_config.get("use_gst", False)
 app = FastAPI()
@@ -159,6 +180,16 @@ def style_wav_uri_to_dict(style_wav: str) -> Union[str, dict]:
         return style_wav  # style_wav is a gst dictionary with {token1_id : token1_weigth, ...}
     return None
 
+class SpeakerException(Exception):
+    def __init__(self, speaker_id: str):
+        self.speaker_id = speaker_id
+
+@app.exception_handler(SpeakerException)
+async def speaker_exception_handler(request: Request, exc: SpeakerException):
+    return JSONResponse(
+        status_code=406,
+        content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(speaker_ids.keys())},
+    )
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -168,7 +199,7 @@ async def index(request: Request):
          "show_details":args.show_details,
          "use_multi_speaker":use_multi_speaker,
          #"speaker_ids":speaker_manager.ids if speaker_manager is not None else None,
-         "speaker_ids":new_speaker_ids if speaker_manager is not None else None,
+         "speaker_ids":speaker_ids if speaker_manager is not None else None,
          "use_gst":use_gst}
     )
 
@@ -192,14 +223,20 @@ async def details(request: Request):
 
 
 @app.get("/api/tts")
-async def tts(text: str, speaker_id: str, style_wav: str):
-    style_wav = style_wav_uri_to_dict(style_wav)
+async def tts(speaker_id: str, text: str = Query(min_length=1)):
+    if speaker_id not in speaker_ids.keys():
+        raise SpeakerException(speaker_id=speaker_id)
+    # style_wav = style_wav_uri_to_dict(style_wav)
     print(" > Model input: {}".format(text))
     print(" > Speaker Idx: {}".format(speaker_id))
-    wavs = synthesizer.tts(text, speaker_name=new_speaker_ids[speaker_id], style_wav=style_wav)
+    if use_aliases:
+        input_speaker_id = new_speaker_ids[speaker_id]
+    else:
+        input_speaker_id = speaker_id
+    wavs = synthesizer.tts(text, speaker_name=input_speaker_id)
     out = io.BytesIO()
     synthesizer.save_wav(wavs, out)
-    print({"text": text, "speaker_idx": speaker_id, "style_wav": style_wav})
+    print({"text": text, "speaker_idx": speaker_id})
     return StreamingResponse(out, media_type="audio/wav")
 
 def main():

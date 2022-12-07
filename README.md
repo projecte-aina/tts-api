@@ -25,11 +25,11 @@ tts-api uses `FastAPI` and `uvicorn` under the hood. For now, in order to launch
 ```
 python server/server.py --model_path models/vits_ca/best_model.pth --config_path models/vits_ca/config.json --port 8001
 ```
-that receives the calls from '0.0.0.0:8000', or simply
+that receives the calls from '0.0.0.0:8001', or simply
 ```
 python server/server.py
 ```
-which gets the calls from `0.0.0.0:8000` by default
+which gets the calls from `0.0.0.0:8001` by default
 
 ## Docker Install and launch
 
@@ -38,11 +38,30 @@ To build:
 docker build -t tts-api .
 ```
 
+Also speed option can we given as a build argument, the following build makes the voices speak with `1.5` speed:
+
+```
+docker build --build-arg speed="1.5" -t tts-api-test .
+```
+
 To launch:
 ```
 docker run --name tts -p 8001:8001 tts-api --port 8001
 ```
-The default entrypoint puts the web interface to `http://0.0.0.0:8000/`.
+The default entrypoint puts the web interface to `http://0.0.0.0:8001/`.
+
+#### Deployment with docker compose
+
+```bash
+make deploy
+```
+Example of deployment changing speech speed parameter
+
+```bash
+make deploy speed=1.6
+```
+
+The example docker-compose file shows also the build-arg usage for the speed parameter.
 
 ## Deployment via Helm
 
