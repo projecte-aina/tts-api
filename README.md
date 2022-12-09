@@ -38,10 +38,10 @@ To build:
 docker build -t tts-api .
 ```
 
-Also speed option can we given as a build argument, the following build makes the voices speak with `1.5` speed:
+Also, speech_speed option can we given as a build argument, the following build makes the voices speak with `1.5` speed:
 
 ```
-docker build --build-arg speed="1.5" -t tts-api-test .
+docker build --build-arg speech_speed="1.5" -t tts-api-test .
 ```
 
 To launch:
@@ -55,13 +55,44 @@ The default entrypoint puts the web interface to `http://0.0.0.0:8001/`.
 ```bash
 make deploy
 ```
-Example of deployment changing speech speed parameter
+Example of deployment changing speech_speed parameter
 
 ```bash
-make deploy speed=1.6
+make deploy speech_speed=1.5
 ```
 
-The example docker-compose file shows also the build-arg usage for the speed parameter.
+The example docker-compose file shows also the build-arg usage for the speech_speed parameter.
+
+## Deployment via Helm
+
+The chart is still not available on any repository so you need to run this command from the repository folder.
+Please, keep in mind that if you are deploying this chart to a cloud K8s instance you need to push the Docker image first
+to an image registry.
+
+Create namespace
+```bash
+kubectl create namespace apps
+```
+Deploy chart
+```bash
+#Run the following command from $BASE_REPO_PATH/charts/aina-tts-api path
+helm upgrade --install aina-tts-api --create-namespace . 
+```
+
+You can either change the values on `values.yaml` or override them.
+
+```bash
+helm upgrade --install aina-tts-api --create-namespace \
+  --set global.namespace=apps \
+  --set api.image=tts-api \
+  --set api.tag=latest .
+```
+
+Deploy helm chart with a different speech speed value
+```bash
+helm upgrade --install aina-tts-api --create-namespace \
+  --set api.speech_speed=1.6 .
+```
 
 ## Authors and acknowledgment
 Developed by TeMU BSC. The code is based on Coqui TTS server.py that has a Mozilla Public License 2.0.
