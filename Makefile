@@ -1,7 +1,7 @@
-speed ?= 1.0
+speech_speed ?= 1.0
 
 deploy:
-	speed=$(speed) docker compose up --build
+	speech_speed=$(speech_speed) docker compose up --build
 undeploy:
 	docker compose down
 stop:
