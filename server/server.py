@@ -4,6 +4,7 @@ import io
 import json
 import os
 import sys
+import hashlib
 from pathlib import Path
 from typing import Union
 
@@ -74,6 +75,7 @@ def create_argparser():
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
     parser.add_argument("--speech_speed", type=float, default=1.0, help="Change speech speed.")
+    parser.add_argument("--cache_dir", type=str, default="/tmp", help="Directory for the cached audio files.")
     return parser
 
 def update_config(config_path, velocity):
@@ -191,6 +193,20 @@ async def speaker_exception_handler(request: Request, exc: SpeakerException):
         content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(speaker_ids.keys())},
     )
 
+def synthesizer_tts(text, speaker_name):
+    key = bytes(' '.join([text,speaker_name]), 'utf-8')
+    hash_key = hashlib.sha256(key).hexdigest()
+    cache_file = os.path.join(args.cache_dir, hash_key+'.wav')
+    if os.path.isfile(cache_file):
+        print("reproducing from cache")
+        out = io.BytesIO(open(cache_file, 'rb').read())
+    else:
+        wavs = synthesizer.tts(text, speaker_name=speaker_name)
+        out = io.BytesIO()
+        synthesizer.save_wav(wavs, out)
+        synthesizer.save_wav(wavs, cache_file)
+    return out
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse(
@@ -233,9 +249,7 @@ async def tts(speaker_id: str, text: str = Query(min_length=1)):
         input_speaker_id = new_speaker_ids[speaker_id]
     else:
         input_speaker_id = speaker_id
-    wavs = synthesizer.tts(text, speaker_name=input_speaker_id)
-    out = io.BytesIO()
-    synthesizer.save_wav(wavs, out)
+    out = synthesizer_tts(text, speaker_name=input_speaker_id)
     print({"text": text, "speaker_idx": speaker_id})
     return StreamingResponse(out, media_type="audio/wav")
 
