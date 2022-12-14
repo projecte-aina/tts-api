@@ -107,7 +107,6 @@ Mozilla Public License 2.0
 - [x] Improved models
 - [x] Speed control
 - [ ] Caching
-- [ ] 
 
 ## Finançament
 
