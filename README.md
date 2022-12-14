@@ -108,7 +108,7 @@ Mozilla Public License 2.0
 - [x] Speed control
 - [ ] Caching
 
-## Finançament
+## Funding
 
 This work is funded by the [Generalitat de
 Catalunya](https://politiquesdigitals.gencat.cat/ca/inici/index.html#googtrans(ca|en))
