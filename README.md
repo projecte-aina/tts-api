@@ -25,11 +25,11 @@ tts-api uses `FastAPI` and `uvicorn` under the hood. For now, in order to launch
 ```
 python server/server.py --model_path models/vits_ca/best_model.pth --config_path models/vits_ca/config.json --port 8001
 ```
-that receives the calls from '0.0.0.0:8001', or simply
+that receives the calls from `0.0.0.0:8001`, or simply
 ```
 python server/server.py
 ```
-which gets the calls from `0.0.0.0:8001` by default
+which gets the calls from `0.0.0.0:8000` by default
 
 ## Docker Install and launch
 
@@ -95,12 +95,25 @@ helm upgrade --install aina-tts-api --create-namespace \
 ```
 
 ## Authors and acknowledgment
-Developed by TeMU BSC. The code is based on Coqui TTS server.py that has a Mozilla Public License 2.0.
+Developed by the Text Mining Unit in Barcelona Supercomputing Center. The code is based on Coqui TTS server.py that has a Mozilla Public License 2.0.
 
 ## License
+Mozilla Public License 2.0
 
 ## Project status
 
 - [x] Conteinerized
-- [ ] Improved endpoints
-- [ ] Improved models
+- [x] Improved endpoints
+- [x] Improved models
+- [x] Speed control
+- [ ] Caching
+- [ ] 
+
+## Finançament
+
+This work is funded by the [Generalitat de
+Catalunya](https://politiquesdigitals.gencat.cat/ca/inici/index.html#googtrans(ca|en))
+within the framework of [Projecte AINA](https://politiquesdigitals.gencat.cat/ca/economia/catalonia-ai/aina).
+
+<a target="_blank" title="Generalitat de Catalunya" href="https://politiquesdigitals.gencat.cat/ca/economia/catalonia-ai/aina/"><img alt="Generalitat logo" src="https://bot.aina.bsc.es/logos/gene.png" width="400"></a>
+
