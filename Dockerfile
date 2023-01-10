@@ -7,7 +7,7 @@ RUN python -m pip install --upgrade pip
 RUN python -m pip install --no-cache-dir --upgrade -r /opt/requirements.txt
 
 COPY . /opt/tts-api
-RUN wget -q http://share.laklak.eu/model_vits_ca/best_model.pth -P /opt/tts-api/models/vits_ca/
+RUN wget -q https://huggingface.co/projecte-aina/tts-ca-coqui-vits-multispeaker/resolve/main/model/best_model.pth -P /opt/tts-api/models/vits_ca/
 
 ARG speech_speed=1.0
 ENV speech_speed $speech_speed
