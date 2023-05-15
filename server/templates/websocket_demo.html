@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Engine - Websockets</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"
+    integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous"
+    rel="stylesheet">
+
+    <style>
+        body {
+            padding-top: 54px;
+        }
+
+        @media (min-width: 992px) {
+            body {
+                padding-top: 56px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- <textarea id="text-input" rows="5" cols="50" placeholder="Escriu el teu text aqui"></textarea>
+    <button id="submit-text">Envia i reprodueix</button>
+    <button id="stop">Atura</button> -->
+
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12 text-center">
+                <ul class="list-unstyled">
+                </ul>
+
+                <h3>WebSocket Audio Streaming</h3>
+
+                {%if use_gst%}
+                <input value='{"0": 0.1}' id="style_wav" placeholder="style wav (dict or path ot wav).." size=45
+                    type="text" name="style_wav">
+                {%endif%}
+
+                <input id="text" placeholder="Escriu aquí..." size=45 type="text" name="text">
+                <button id="speak-button" name="speak">Parla</button>
+                <button id="stop">Atura</button>
+                <br /><br />
+
+                {%if use_multi_speaker%}
+                Trieu un locutor:
+                <select id="speaker_id" name=speaker_id method="GET" action="/">
+                    {% for speaker_id in speaker_ids %}
+                    <option value="{{speaker_id}}" SELECTED>{{speaker_id}}</option>"
+                    {% endfor %}
+                </select><br /><br />
+                {%endif%}
+
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <script>
+
+        const stopButton = document.getElementById('stop');
+        const submitTextButton = document.getElementById('speak-button');
+        const textInput = document.getElementById('text');
+        const speaker_id = document.getElementById('speaker_id');
+
+        let audioContext;
+        let source;
+        let socket;
+        let lastSource;
+        let isPlaying = false;
+
+        async function initWebSocket() {
+            socket = new WebSocket('ws://' + location.host + '/audio-stream');
+            socket.binaryType = 'arraybuffer';
+
+            socket.onmessage = async (event) => {
+                if (isPlaying) return;
+
+                const audioData = new Uint8Array(event.data);
+                const buffer = await audioContext.decodeAudioData(audioData.buffer);
+                const newSource = audioContext.createBufferSource();
+                newSource.buffer = buffer;
+                newSource.connect(audioContext.destination);
+                newSource.start();
+                lastSource = newSource;
+                isPlaying = true;
+
+                newSource.onended = () => {
+                    isPlaying = false;
+                    sendFinishedPlaying(); // Send message indicating audio has finished playing
+                };
+            };
+
+            socket.onopen = (event) => {
+                console.log('WebSocket connected:', event);
+            };
+
+            socket.onclose = (event) => {
+                console.log('WebSocket disconnected:', event);
+                if (source) {
+                    source.disconnect();
+                }
+            };
+
+            socket.onerror = (event) => {
+                console.error('WebSocket error:', event);
+            };
+        }
+
+        async function startAndSubmitText() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                source = audioContext.createBufferSource();
+            }
+
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                console.log({text: textInput.value, speaker_id: speaker_id.value })
+
+                socket.send(JSON.stringify({text: textInput.value, speaker_id: speaker_id.value }));
+            }
+
+            stopButton.disabled = false;
+        }
+
+        function stop() {
+            if (lastSource) {
+                lastSource.stop();
+                lastSource.disconnect();
+            }
+
+            stopButton.disabled = true;
+        }
+
+        function sendFinishedPlaying() {
+            socket.send('finished-playing');
+        }
+
+        window.addEventListener('load', initWebSocket);
+        submitTextButton.addEventListener('click', startAndSubmitText);
+        stopButton.addEventListener('click', stop);
+    </script>
+</body>
+</html>
