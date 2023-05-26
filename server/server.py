@@ -162,6 +162,8 @@ if use_aliases:
 else:
     speaker_ids = speaker_manager.ids
 
+languages = ['ca-es']
+
 # TODO: set this from SpeakerManager
 use_gst = synthesizer.tts_config.get("use_gst", False)
 app = FastAPI()
@@ -197,6 +199,17 @@ async def speaker_exception_handler(request: Request, exc: SpeakerException):
     return JSONResponse(
         status_code=406,
         content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(speaker_ids.keys())},
+    )
+
+class LanguageException(Exception):
+    def __init__(self, language: str):
+        self.language = language
+
+@app.exception_handler(LanguageException)
+async def speaker_exception_handler(request: Request, exc: LanguageException):
+    return JSONResponse(
+        status_code=406,
+        content={"message": f"{exc.language} is an unknown language id.", "accept": languages},
     )
 
 @app.get("/", response_class=HTMLResponse)
@@ -242,15 +255,22 @@ async def details(request: Request):
     )
 
 class TTSRequestModel(BaseModel):
-    language: Union[str, None] = "es-CA"
+    language: Union[str, None] = "ca-es"
     voice: str
     type: str
     text: str = Field(..., min_length=1)
+
 @app.get("/api/v2/tts")
 async def tts(request: TTSRequestModel):
     print(request.language)
     speaker_id = request.voice
     text = request.text
+
+    if speaker_id not in speaker_ids.keys():
+        raise SpeakerException(speaker_id=speaker_id)
+    if request.language not in languages:
+        raise LanguageException(language=request.language)
+    
     out = generate(text, speaker_ids, synthesizer, new_speaker_ids, use_aliases, speaker_id)
     return StreamingResponse(out, media_type="audio/wav")
 
