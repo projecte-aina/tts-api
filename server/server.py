@@ -1,12 +1,15 @@
-#!flask/bin/python
 import argparse
+import asyncio
 import io
 import json
 import os
 import sys
+import traceback
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Union
 
+import torch
 from fastapi import FastAPI, Request, Query
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -16,7 +19,10 @@ import uvicorn
 from TTS.config import load_config
 from TTS.utils.manage import ModelManager
 from TTS.utils.synthesizer import Synthesizer
+from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
+from starlette.websockets import WebSocket
+
 
 # global path variables
 path = Path(__file__).parent / ".models.json"
@@ -127,6 +133,8 @@ if args.vocoder_path is not None:
 if args.speech_speed != 1.0:
     update_config(config_path, args.speech_speed)
 
+torch.set_grad_enabled(False)
+
 # load models
 synthesizer = Synthesizer(
     tts_checkpoint=model_path,
@@ -153,6 +161,8 @@ if use_aliases:
     speaker_ids = new_speaker_ids
 else:
     speaker_ids = speaker_manager.ids
+
+languages = ['ca-es']
 
 # TODO: set this from SpeakerManager
 use_gst = synthesizer.tts_config.get("use_gst", False)
@@ -191,10 +201,33 @@ async def speaker_exception_handler(request: Request, exc: SpeakerException):
         content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(speaker_ids.keys())},
     )
 
+class LanguageException(Exception):
+    def __init__(self, language: str):
+        self.language = language
+
+@app.exception_handler(LanguageException)
+async def speaker_exception_handler(request: Request, exc: LanguageException):
+    return JSONResponse(
+        status_code=406,
+        content={"message": f"{exc.language} is an unknown language id.", "accept": languages},
+    )
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse(
         "index.html",
+        {"request": request,
+         "show_details":args.show_details,
+         "use_multi_speaker":use_multi_speaker,
+         #"speaker_ids":speaker_manager.ids if speaker_manager is not None else None,
+         "speaker_ids":speaker_ids if speaker_manager is not None else None,
+         "use_gst":use_gst}
+    )
+
+@app.get("/websocket-demo", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse(
+        "websocket_demo.html",
         {"request": request,
          "show_details":args.show_details,
          "use_multi_speaker":use_multi_speaker,
@@ -221,6 +254,25 @@ async def details(request: Request):
          "args": args.__dict__}
     )
 
+class TTSRequestModel(BaseModel):
+    language: Union[str, None] = "ca-es"
+    voice: str
+    type: str
+    text: str = Field(..., min_length=1)
+
+@app.get("/api/v2/tts")
+async def tts(request: TTSRequestModel):
+    print(request.language)
+    speaker_id = request.voice
+    text = request.text
+
+    if speaker_id not in speaker_ids.keys():
+        raise SpeakerException(speaker_id=speaker_id)
+    if request.language not in languages:
+        raise LanguageException(language=request.language)
+    
+    out = generate(text, speaker_ids, synthesizer, new_speaker_ids, use_aliases, speaker_id)
+    return StreamingResponse(out, media_type="audio/wav")
 
 @app.get("/api/tts")
 async def tts(speaker_id: str, text: str = Query(min_length=1)):
@@ -239,6 +291,85 @@ async def tts(speaker_id: str, text: str = Query(min_length=1)):
     print({"text": text, "speaker_idx": speaker_id})
     return StreamingResponse(out, media_type="audio/wav")
 
+
+
+async def play_audio(queue: asyncio.Queue, websocket: WebSocket):
+    while True:
+        # get the next audio chunk from the queue
+        audio_chunk = await queue.get()
+
+        # check if this is the end of the stream
+        if audio_chunk is None:
+            break
+
+        # send the audio chunk to the client
+        await websocket.send_bytes(audio_chunk)
+        # print a message for debugging
+        # print(f"Sent audio chunk of {len(audio_chunk)} bytes")
+        # receive any data from the client (this will return None if the connection is closed)
+        # TODO needs a timeout here in case the audio is not played (or finished?) within a given time
+        data = await websocket.receive()
+        # check if the connection is closed
+        if data is None:
+            break
+
+def generate(sentence, speaker_ids, synthesizer, new_speaker_ids, use_aliases, speaker_id="f_cen_81"):
+    print(f"Processing sentence: {sentence}")
+
+    if speaker_id not in speaker_ids.keys():
+        raise SpeakerException(speaker_id=speaker_id)
+    # style_wav = style_wav_uri_to_dict(style_wav)
+    print(" > Model input: {}".format(sentence))
+    print(" > Speaker Idx: {}".format(speaker_id))
+    if use_aliases:
+        input_speaker_id = new_speaker_ids[speaker_id]
+    else:
+        input_speaker_id = speaker_id
+
+    wavs = synthesizer.tts(sentence, speaker_name=input_speaker_id)
+
+    out = io.BytesIO()
+
+    print(f"Out: {out}")
+    synthesizer.save_wav(wavs, out)
+
+
+    return out
+
+@app.websocket_route("/audio-stream")
+async def stream_audio(websocket: WebSocket):
+    await websocket.accept()
+
+    audio_queue = asyncio.Queue()
+
+    try:
+        while True:
+            received_data = await websocket.receive_json()
+
+            sentences = received_data.get("text").split('.')
+            speaker_id = received_data.get("speaker_id")
+
+            # create a separate task for audio generation
+            generator_task = asyncio.create_task(generate_audio(sentences, speaker_id, audio_queue))
+
+            # create a task for audio playing
+            player_task = asyncio.create_task(play_audio(audio_queue, websocket))
+
+            # wait for both tasks to complete
+            await asyncio.gather(generator_task, player_task)
+
+    except Exception as e:
+        traceback.print_exc()
+
+async def generate_audio(sentences, speaker_id, audio_queue):
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as executor:
+        for sentence in sentences:
+            if sentence:
+                content = await loop.run_in_executor(executor, generate, sentence, speaker_ids, synthesizer, new_speaker_ids, use_aliases, speaker_id)
+                await audio_queue.put(content)
+
+    await audio_queue.put(None)  # signal that we're done generating audio
 def main():
     uvicorn.run('server:app', host=args.host, port=args.port)
 
