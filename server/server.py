@@ -5,7 +5,11 @@ import json
 import os
 import sys
 import traceback
+import multiprocessing as mp
+
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
+from itertools import chain
 from pathlib import Path
 from typing import Union
 
@@ -23,6 +27,7 @@ from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 from starlette.websockets import WebSocket
 
+from utils.argparse import MpWorkersAction
 
 # global path variables
 path = Path(__file__).parent / ".models.json"
@@ -77,6 +82,8 @@ def create_argparser():
     parser.add_argument("--port", type=int, default=8000, help="port to listen on.")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="host ip to listen.")
     parser.add_argument("--use_cuda", type=convert_boolean, default=False, help="true to use CUDA.")
+    parser.add_argument("--use_mp", type=convert_boolean, default=False, help="true to use CPU multiprocessing.")
+    parser.add_argument("--mp_workers", action=MpWorkersAction ,type=int, default=mp.cpu_count(), help="number of CPUs used for multiprocessing")
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
     parser.add_argument("--speech_speed", type=float, default=1.0, help="Change speech speed.")
@@ -133,6 +140,7 @@ if args.vocoder_path is not None:
 if args.speech_speed != 1.0:
     update_config(config_path, args.speech_speed)
 
+torch.set_num_threads(1)
 torch.set_grad_enabled(False)
 
 # load models
@@ -254,6 +262,30 @@ async def details(request: Request):
          "args": args.__dict__}
     )
 
+def worker(sentence, speaker_id):
+
+    print(" > Model input: {}".format(sentence))
+    print(" > Speaker Idx: {}".format(speaker_id))
+    if use_aliases:
+        input_speaker_id = new_speaker_ids[speaker_id]
+    else:
+        input_speaker_id = speaker_id
+
+    synthesizer = Synthesizer(
+        tts_checkpoint=model_path,
+        tts_config_path=config_path,
+        tts_speakers_file=speakers_file_path,
+        tts_languages_file=None,
+        vocoder_checkpoint=vocoder_path,
+        vocoder_config=vocoder_config_path,
+        encoder_checkpoint="",
+        encoder_config="",
+        use_cuda=args.use_cuda,
+    )
+
+    wavs = synthesizer.tts(sentence, input_speaker_id)
+
+    return wavs
 class TTSRequestModel(BaseModel):
     language: Union[str, None] = "ca-es"
     voice: str
@@ -262,7 +294,6 @@ class TTSRequestModel(BaseModel):
 
 @app.get("/api/v2/tts")
 async def tts(request: TTSRequestModel):
-    print(request.language)
     speaker_id = request.voice
     text = request.text
 
@@ -270,8 +301,26 @@ async def tts(request: TTSRequestModel):
         raise SpeakerException(speaker_id=speaker_id)
     if request.language not in languages:
         raise LanguageException(language=request.language)
-    
-    out = generate(text, speaker_ids, synthesizer, new_speaker_ids, use_aliases, speaker_id)
+
+    if args.use_mp:
+
+        sentences = text.split('.')
+
+        mp_workers = args.mp_workers
+        worker_with_args = partial(worker, speaker_id=speaker_id)
+
+        pool = mp.Pool(processes=mp_workers)
+        results = pool.map(worker_with_args, [sentence.strip() + '.' for sentence in sentences if sentence])
+        # Close the pool to indicate that no more tasks will be submitted
+        pool.close()
+        # Wait for all processes to complete
+        pool.join()
+        merged_wavs = list(chain(*results))
+
+        out = io.BytesIO()
+        synthesizer.save_wav(merged_wavs, out)
+    else:
+        out = generate(text, speaker_ids, synthesizer, new_speaker_ids, use_aliases, speaker_id)
     return StreamingResponse(out, media_type="audio/wav")
 
 @app.get("/api/tts")
