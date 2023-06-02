@@ -31,6 +31,24 @@ python server/server.py
 ```
 which gets the calls from `0.0.0.0:8000` by default
 
+## Usage
+
+tts-api has three inference endpoints, two openapi ones (as can be seen via `/docs`) and one websocket endpoint:
+
+* `/api/tts`: main inference endpoint; currently does single worker, serial inference and uses URL parameters.
+* `/api/v2/tts`: endpoint specifically designed for jambonz integration; currently does single worker, serial inference and parameters are passed through the body of the request.
+* `/audio-stream`: websocket endpoint; capable of doing async inference, as soon as the first segment is synthesized the audio starts streaming.
+
+The example for `/api/tts` can be found in `/docs`. The websocket request is contingent on the communication with the client, hence we provide an example client at the `/websocket-demo` enpoint. For the `api/v2/tts` the call is as the following:
+
+```
+curl --location --request GET '<URL>/api/v2/tts' --header 'Content-Type: application/json' --data-raw '{
+    "voice": "f_cen_81",
+    "type": "text",
+    "text": "El Consell s’ha reunit avui per darrera vegada abans de les eleccions. Divendres vinent, tant el president com els consellers ja estaran en funcions. A l’ordre del dia d’avui tampoc no hi havia l’aprovació del requisit lingüístic, és a dir la normativa que ha de regular la capacitació lingüística dels aspirants a accedir a un lloc en la Funció Pública Valenciana.",
+    "language": "ca-es" }' > tts.wav
+```
+
 ## Docker Install and launch
 
 To build:
