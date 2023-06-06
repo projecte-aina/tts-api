@@ -140,8 +140,7 @@ if args.vocoder_path is not None:
 if args.speech_speed != 1.0:
     update_config(config_path, args.speech_speed)
 
-torch.set_num_threads(1)
-torch.set_grad_enabled(False)
+
 
 # load models
 synthesizer = Synthesizer(
@@ -271,17 +270,6 @@ def worker(sentence, speaker_id):
     else:
         input_speaker_id = speaker_id
 
-    synthesizer = Synthesizer(
-        tts_checkpoint=model_path,
-        tts_config_path=config_path,
-        tts_speakers_file=speakers_file_path,
-        tts_languages_file=None,
-        vocoder_checkpoint=vocoder_path,
-        vocoder_config=vocoder_config_path,
-        encoder_checkpoint="",
-        encoder_config="",
-        use_cuda=args.use_cuda,
-    )
 
     wavs = synthesizer.tts(sentence, input_speaker_id)
 
@@ -423,4 +411,7 @@ def main():
     uvicorn.run('server:app', host=args.host, port=args.port)
 
 if __name__ == "__main__":
+    torch.set_num_threads(1)
+    torch.set_grad_enabled(False)
+    mp.set_start_method("spawn")
     main()
