@@ -50,7 +50,74 @@ docker run --name tts -p 8001:8001 tts-api --port 8001
 ```
 The default entrypoint puts the web interface to `http://0.0.0.0:8001/`.
 
-#### Deployment with docker compose
+
+
+## REST API Endpoints
+
+| **Method** | **Endpoint** | **Description**                                       |
+|------------|--------------|-------------------------------------------------------|
+| POST       | `/api/tts`   | Generate speech audio from text using TTS.            |
+
+**Request Parameters:**
+
+| **Parameter** | **Type**           | **Description**                                            |
+|---------------|--------------------|------------------------------------------------------------|
+| language      | string             | ISO language code (e.g., "ca-es")                          |
+| voice         | string             | Name of the voice to use                                   |
+| type          | string             | Type of input text ("text" or "ssml")                      |
+| text          | string             | Text to be synthesized (if type is "ssml", enclose in tags) |
+
+**Available speakers ids:**
+
+| **Speaker id** | **Description**                                       |
+|----------------|-------------------------------------------------------|
+| f_cen_81       | Description of f_cen_81                               |
+| f_cen_05       | Description of f_cen_05                               |
+| f_occ_de       | Description of f_occ_de                               |
+| f_occ_31       | Description of f_occ_31                               |
+| f_sep_31       | Description of f_sep_31                               |
+| m_val_89       | Description of m_val_89                               |
+| m_occ_44       | Description of m_occ_44                               |
+| m_cen_08       | Description of m_cen_08                               |
+
+**NOTES:** 
+- ssml format is not available yet.
+- Actually only "ca-es" language is supported, and will be applied by default
+
+**Successful Response:**
+
+The endpoint returns a streaming response that contains the synthesized speech audio in WAV format.
+
+
+**Sample Request:**
+
+```http
+POST /api/tts
+
+{
+  "voice": "speaker_id",
+  "text": "Bon dia!",
+  "type": "text"
+}
+```
+
+## Deployment
+
+#### Command line deployment arguments
+| **Argument**           | **Type** | **Default**                             | **Description**                                                               |
+|------------------------|----------|-----------------------------------------|-------------------------------------------------------------------------------|
+| use_cuda               | boolean  | False                                   | Use CUDA for computation (True/False).                                        |
+| mp_workers             | int      | 2                                       | Number of CPUs used for multiprocessing.                                      |
+| speech_speed           | float    | 1.0                                     | Change the speech speed.                                                      |
+
+- use_cuda: Boolean flag that determines whether to use CUDA-capable GPUs (Graphical Processing Units) for computations if they're available.
+
+- mp_workers: the "mp_workers" argument specifies the number of separate processes used for inference. For example, if mp_workers is set to 2 and the input consists of 2 sentences, there will be a process assigned to each sentence, speeding up  inference.
+
+- The "speech_speed" argument refers to a parameter that adjusts the rate at which speech sounds in an audio output, with higher values resulting in faster speech, and lower values leading to slower speech.
+
+
+#### Deployment via docker compose
 
 ```bash
 make deploy
@@ -58,12 +125,12 @@ make deploy
 Example of deployment changing speech_speed parameter
 
 ```bash
-make deploy speech_speed=1.5
+make deploy speech_speed=1.5 
 ```
 
 The example docker-compose file shows also the build-arg usage for the speech_speed parameter.
 
-## Deployment via Helm
+#### Deployment via Helm
 
 The chart is still not available on any repository so you need to run this command from the repository folder.
 Please, keep in mind that if you are deploying this chart to a cloud K8s instance you need to push the Docker image first
