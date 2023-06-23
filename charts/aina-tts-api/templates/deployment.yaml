@@ -23,3 +23,6 @@ spec:
           env:
           - name: "speech_speed"
             value: {{.Values.api.speech_speed | default "1.0" | quote }}
+          - name: "mp_workers"
+            value: {{.Values.api.mp_workers | default "4" | quote }}
+
