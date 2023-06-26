@@ -85,22 +85,10 @@ The default entrypoint puts the web interface to `http://0.0.0.0:8001/`.
 | type          | string             | Type of input text ("text" or "ssml")                      |
 | text          | string             | Text to be synthesized (if type is "ssml", enclose in tags) |
 
-**Available speakers ids:**
-
-| **Speaker id** | **Description**                                       |
-|----------------|-------------------------------------------------------|
-| f_cen_81       | Description of f_cen_81                               |
-| f_cen_05       | Description of f_cen_05                               |
-| f_occ_de       | Description of f_occ_de                               |
-| f_occ_31       | Description of f_occ_31                               |
-| f_sep_31       | Description of f_sep_31                               |
-| m_val_89       | Description of m_val_89                               |
-| m_occ_44       | Description of m_occ_44                               |
-| m_cen_08       | Description of m_cen_08                               |
 
 **NOTES:** 
 - ssml format is not available yet.
-- Actually only "ca-es" language is supported, and will be applied by default
+- Currently, only "ca-es" language is supported, and will be applied by default
 
 **Successful Response:**
 
@@ -124,11 +112,8 @@ POST /api/tts
 #### Command line deployment arguments
 | **Argument**           | **Type** | **Default**                             | **Description**                                                               |
 |------------------------|----------|-----------------------------------------|-------------------------------------------------------------------------------|
-| use_cuda               | boolean  | False                                   | Use CUDA for computation (True/False).                                        |
 | mp_workers             | int      | 2                                       | Number of CPUs used for multiprocessing.                                      |
 | speech_speed           | float    | 1.0                                     | Change the speech speed.                                                      |
-
-- use_cuda: Boolean flag that determines whether to use CUDA-capable GPUs (Graphical Processing Units) for computations if they're available.
 
 - mp_workers: the "mp_workers" argument specifies the number of separate processes used for inference. For example, if mp_workers is set to 2 and the input consists of 2 sentences, there will be a process assigned to each sentence, speeding up  inference.
 

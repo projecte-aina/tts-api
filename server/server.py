@@ -84,7 +84,6 @@ def create_argparser():
     parser.add_argument("--use_cuda", type=convert_boolean, default=False, help="true to use CUDA.")
     parser.add_argument("--mp_workers", action=MpWorkersAction, type=int, default=2,
                         help="number of CPUs used for multiprocessing")
-    # parser.add_argument("--mp_workers", action=MpWorkersAction ,type=int, default=mp.cpu_count(), help="number of CPUs used for multiprocessing")
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
     parser.add_argument("--speech_speed", type=float, default=1.0, help="Change speech speed.")
@@ -181,7 +180,6 @@ class SpeakerConfigAttributes:
         self.setup_speaker_attributes()
 
     def setup_speaker_attributes(self):
-        # global new_speaker_ids, use_aliases
 
         model = app.state.synthesizer
 
@@ -205,27 +203,6 @@ class SpeakerConfigAttributes:
 
         self.use_multi_speaker = use_multi_speaker
         self.speaker_manager = speaker_manager
-
-    def get_use_multi_speaker(self):
-        return self.use_multi_speaker
-
-    def get_speaker_ids(self):
-        return self.speaker_ids
-
-    def get_speaker_manager(self):
-        return self.speaker_manager
-
-    def get_languages(self):
-        return self.languages
-
-    def get_new_speaker_ids(self):
-        return self.new_speaker_ids
-
-    def get_use_aliases(self):
-        return self.use_aliases
-
-    def get_use_gst(self):
-        return self.use_gst
 
 
 def style_wav_uri_to_dict(style_wav: str) -> Union[str, dict]:
@@ -254,12 +231,11 @@ class SpeakerException(Exception):
 
 @app.exception_handler(SpeakerException)
 async def speaker_exception_handler(request: Request, exc: SpeakerException):
-    speaker_config_attrib = app.state.SpeakerConfigAttributes
-    speaker_ids = speaker_config_attrib.get_speaker_ids()
+    speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__
 
     return JSONResponse(
         status_code=406,
-        content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(speaker_ids.keys())},
+        content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(speaker_config_attributes["speaker_ids"].keys())},
     )
 
 
@@ -270,52 +246,22 @@ class LanguageException(Exception):
 
 @app.exception_handler(LanguageException)
 async def speaker_exception_handler(request: Request, exc: LanguageException):
-    speaker_config_attrib = app.state.SpeakerConfigAttributes
-    languages = speaker_config_attrib.get_languages()
+    speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__
 
     return JSONResponse(
         status_code=406,
-        content={"message": f"{exc.language} is an unknown language id.", "accept": languages},
+        content={"message": f"{exc.language} is an unknown language id.", "accept": speaker_config_attributes["languages"]},
     )
-
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    speaker_config_attrib = app.state.SpeakerConfigAttributes
-    use_multi_speaker = speaker_config_attrib.get_use_multi_speaker()
-    speaker_ids = speaker_config_attrib.get_speaker_ids()
-    speaker_manager = speaker_config_attrib.get_speaker_manager()
-    use_gst = speaker_config_attrib.get_use_gst()
-
-    return templates.TemplateResponse(
-        "index.html",
-        {"request": request,
-         "show_details": args.show_details,
-         "use_multi_speaker": use_multi_speaker,
-         # "speaker_ids":speaker_manager.ids if speaker_manager is not None else None,
-         "speaker_ids": speaker_ids if speaker_manager is not None else None,
-         "use_gst": use_gst}
-    )
-
+    speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__
+    return templates.TemplateResponse("index.html", {"request": request, **speaker_config_attributes})
 
 @app.get("/websocket-demo", response_class=HTMLResponse)
-async def index(request: Request):
-    speaker_config_attrib = app.state.SpeakerConfigAttributes
-    use_multi_speaker = speaker_config_attrib.get_use_multi_speaker()
-    speaker_ids = speaker_config_attrib.get_speaker_ids()
-    speaker_manager = speaker_config_attrib.get_speaker_manager()
-    use_gst = speaker_config_attrib.get_use_gst()
-
-    return templates.TemplateResponse(
-        "websocket_demo.html",
-        {"request": request,
-         "show_details": args.show_details,
-         "use_multi_speaker": use_multi_speaker,
-         # "speaker_ids":speaker_manager.ids if speaker_manager is not None else None,
-         "speaker_ids": speaker_ids if speaker_manager is not None else None,
-         "use_gst": use_gst}
-    )
-
+async def websocket_demo(request: Request):
+    speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__
+    return templates.TemplateResponse("websocket_demo.html",{"request": request, **speaker_config_attributes})
 
 @app.get("/details", response_class=HTMLResponse)
 async def details(request: Request):
@@ -377,18 +323,14 @@ async def tts(request: TTSRequestModel):
 
        """
 
-    speaker_config_attrib = app.state.SpeakerConfigAttributes
-    speaker_ids = speaker_config_attrib.get_speaker_ids()
-    languages = speaker_config_attrib.get_languages()
-    use_aliases = speaker_config_attrib.get_use_aliases()
-    new_speaker_ids = speaker_config_attrib.get_new_speaker_ids()
+    speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__
 
     speaker_id = request.voice
     text = request.text
 
-    if speaker_id not in speaker_ids.keys():
+    if speaker_id not in speaker_config_attributes["speaker_ids"].keys():
         raise SpeakerException(speaker_id=speaker_id)
-    if request.language not in languages:
+    if request.language not in speaker_config_attributes["languages"]:
         raise LanguageException(language=request.language)
 
     model = app.state.synthesizer
@@ -396,7 +338,7 @@ async def tts(request: TTSRequestModel):
     sentences = text.split('.')
 
     mp_workers = args.mp_workers
-    worker_with_args = partial(worker, speaker_id=speaker_id, model=model, use_aliases=use_aliases, new_speaker_ids=new_speaker_ids)
+    worker_with_args = partial(worker, speaker_id=speaker_id, model=model, use_aliases=speaker_config_attributes["use_aliases"], new_speaker_ids=speaker_config_attributes["new_speaker_ids"])
 
     pool = mp.Pool(processes=mp_workers)
 
@@ -452,7 +394,6 @@ def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker
 
     out = io.BytesIO()
 
-    print(f"Out: {out}")
     model.save_wav(wavs, out)
 
     return out
@@ -485,18 +426,14 @@ async def stream_audio(websocket: WebSocket):
 
 async def generate_audio(sentences, speaker_id, audio_queue):
     model = app.state.synthesizer
-
-    speaker_config_attrib = app.state.SpeakerConfigAttributes
-    speaker_ids = speaker_config_attrib.get_speaker_ids()
-    new_speaker_ids = speaker_config_attrib.get_new_speaker_ids()
-    use_aliases = speaker_config_attrib.get_use_aliases()
+    speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__
 
     loop = asyncio.get_event_loop()
     with ThreadPoolExecutor() as executor:
         for sentence in sentences:
             if sentence:
-                content = await loop.run_in_executor(executor, generate, sentence, speaker_ids, model, new_speaker_ids,
-                                                     use_aliases, speaker_id)
+                content = await loop.run_in_executor(executor, generate, sentence, speaker_config_attributes["speaker_ids"], model, speaker_config_attributes["new_speaker_ids"],
+                                                     speaker_config_attributes["use_aliases"], speaker_id)
                 await audio_queue.put(content)
 
     await audio_queue.put(None)  # signal that we're done generating audio

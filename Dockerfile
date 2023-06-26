@@ -6,8 +6,8 @@ COPY ./requirements.txt /opt
 RUN python -m pip install --upgrade pip
 RUN python -m pip install --no-cache-dir --upgrade -r /opt/requirements.txt
 
-COPY . /opt/tts-api
 RUN wget -q http://share.laklak.eu/model_vits_ca/best_model.pth -P /opt/tts-api/models/vits_ca/
+COPY . /opt/tts-api
 
 ARG speech_speed=1.0
 ENV speech_speed $speech_speed
