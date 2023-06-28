@@ -340,9 +340,9 @@ async def tts(request: TTSRequestModel):
     mp_workers = args.mp_workers
     worker_with_args = partial(worker, speaker_id=speaker_id, model=model, use_aliases=speaker_config_attributes["use_aliases"], new_speaker_ids=speaker_config_attributes["new_speaker_ids"])
 
-    pool = mp.Pool(processes=mp_workers)
+    with mp.Pool(processes=mp_workers) as pool:
+        results = pool.map(worker_with_args, [sentence.strip() + '.' for sentence in sentences if sentence])
 
-    results = pool.map(worker_with_args, [sentence.strip() + '.' for sentence in sentences if sentence])
     # Close the pool to indicate that no more tasks will be submitted
     pool.close()
     # Wait for all processes to complete
@@ -363,16 +363,20 @@ async def play_audio(queue: asyncio.Queue, websocket: WebSocket):
 
         # check if this is the end of the stream
         if audio_chunk is None:
+            queue.task_done()
             break
 
         # send the audio chunk to the client
         await websocket.send_bytes(audio_chunk)
+
+
         # print a message for debugging
         # print(f"Sent audio chunk of {len(audio_chunk)} bytes")
         # receive any data from the client (this will return None if the connection is closed)
         # TODO needs a timeout here in case the audio is not played (or finished?) within a given time
         data = await websocket.receive()
         # check if the connection is closed
+
         if data is None:
             break
 
@@ -404,12 +408,23 @@ async def stream_audio(websocket: WebSocket):
 
     audio_queue = asyncio.Queue()
 
+    generator_task = player_task = None
     try:
         while True:
             received_data = await websocket.receive_json()
 
             sentences = received_data.get("text").split('.')
             speaker_id = received_data.get("speaker_id")
+
+            if generator_task:
+                generator_task.cancel()
+            if player_task:
+                player_task.cancel()
+
+            # clear the queue before creating a new task
+            while not audio_queue.empty():
+                item = audio_queue.get_nowait()
+                item.close()  # Close the BytesIO object
 
             # create a separate task for audio generation
             generator_task = asyncio.create_task(generate_audio(sentences, speaker_id, audio_queue))
@@ -418,10 +433,25 @@ async def stream_audio(websocket: WebSocket):
             player_task = asyncio.create_task(play_audio(audio_queue, websocket))
 
             # wait for both tasks to complete
-            await asyncio.gather(generator_task, player_task)
-
+            try:
+                await asyncio.gather(asyncio.shield(generator_task), asyncio.shield(player_task))
+            except asyncio.CancelledError:
+                # Handle task cancellation here if needed
+                pass
     except Exception as e:
         traceback.print_exc()
+    finally:
+        if generator_task:
+            generator_task.cancel()
+        if player_task:
+            player_task.cancel()
+
+        # clear the queue when finished
+        while not audio_queue.empty():
+            item = audio_queue.get_nowait()
+            item.close()  # Close the BytesIO object
+            audio_queue.task_done()
+
 
 
 async def generate_audio(sentences, speaker_id, audio_queue):
@@ -431,9 +461,18 @@ async def generate_audio(sentences, speaker_id, audio_queue):
     loop = asyncio.get_event_loop()
     with ThreadPoolExecutor() as executor:
         for sentence in sentences:
-            if sentence:
-                content = await loop.run_in_executor(executor, generate, sentence, speaker_config_attributes["speaker_ids"], model, speaker_config_attributes["new_speaker_ids"],
-                                                     speaker_config_attributes["use_aliases"], speaker_id)
+            sentence = sentence.strip()  # removes leading and trailing whitespaces
+            if len(sentence) > 0:  # checks if sentence is not empty after removing whitespaces
+                content = await loop.run_in_executor(
+                    executor,
+                    generate,
+                    sentence,
+                    speaker_config_attributes["speaker_ids"],
+                    model,
+                    speaker_config_attributes["new_speaker_ids"],
+                    speaker_config_attributes["use_aliases"],
+                    speaker_id
+                )
                 await audio_queue.put(content)
 
     await audio_queue.put(None)  # signal that we're done generating audio
