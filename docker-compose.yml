@@ -5,7 +5,8 @@ services:
       context: .
       args:
         speech_speed: ${speech_speed}
+        mp_workers: ${mp_workers}
     restart: unless-stopped
     ports:
-      - '8080:8080'
-      - '8001:8001'
+      - '8080:8000'
+    shm_size: '2gb'
