@@ -39,6 +39,7 @@ models_path_rel = '../models/vits_ca'
 model_ca = os.path.join(path_dir, models_path_rel, 'best_model.pth')
 config_ca = os.path.join(path_dir, models_path_rel, 'config.json')
 
+
 def create_argparser():
     def convert_boolean(x):
         return x.lower() in ["true", "1", "yes"]
@@ -82,7 +83,7 @@ def create_argparser():
     parser.add_argument("--port", type=int, default=8000, help="port to listen on.")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="host ip to listen.")
     parser.add_argument("--use_cuda", type=convert_boolean, default=False, help="true to use CUDA.")
-    parser.add_argument("--mp_workers", action=MpWorkersAction, type=int, default=2,
+    parser.add_argument("--mp_workers", action=MpWorkersAction, type=int, default=8,
                         help="number of CPUs used for multiprocessing")
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
@@ -208,10 +209,8 @@ class SpeakerConfigAttributes:
 def style_wav_uri_to_dict(style_wav: str) -> Union[str, dict]:
     """Transform an uri style_wav, in either a string (path to wav file to be use for style transfer)
     or a dict (gst tokens/values to be use for styling)
-
     Args:
         style_wav (str): uri
-
     Returns:
         Union[str, dict]: path to file (str) or gst style (dict)
     """
@@ -235,7 +234,8 @@ async def speaker_exception_handler(request: Request, exc: SpeakerException):
 
     return JSONResponse(
         status_code=406,
-        content={"message": f"{exc.speaker_id} is an unknown speaker id.", "accept": list(speaker_config_attributes["speaker_ids"].keys())},
+        content={"message": f"{exc.speaker_id} is an unknown speaker id.",
+                 "accept": list(speaker_config_attributes["speaker_ids"].keys())},
     )
 
 
@@ -250,18 +250,22 @@ async def speaker_exception_handler(request: Request, exc: LanguageException):
 
     return JSONResponse(
         status_code=406,
-        content={"message": f"{exc.language} is an unknown language id.", "accept": speaker_config_attributes["languages"]},
+        content={"message": f"{exc.language} is an unknown language id.",
+                 "accept": speaker_config_attributes["languages"]},
     )
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__
     return templates.TemplateResponse("index.html", {"request": request, **speaker_config_attributes})
 
+
 @app.get("/websocket-demo", response_class=HTMLResponse)
 async def websocket_demo(request: Request):
     speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__
-    return templates.TemplateResponse("websocket_demo.html",{"request": request, **speaker_config_attributes})
+    return templates.TemplateResponse("websocket_demo.html", {"request": request, **speaker_config_attributes})
+
 
 @app.get("/details", response_class=HTMLResponse)
 async def details(request: Request):
@@ -282,7 +286,6 @@ async def details(request: Request):
 
 
 def worker(sentence, speaker_id, model, use_aliases, new_speaker_ids):
-
     print(" > Model input: {}".format(sentence))
     print(" > Speaker Idx: {}".format(speaker_id))
 
@@ -307,20 +310,15 @@ class TTSRequestModel(BaseModel):
 async def tts(request: TTSRequestModel):
     """
        Text-to-Speech API endpoint.
-
        This endpoint receives a TTSRequestModel object containing the voice and text to be synthesized. It performs the
        necessary processing to generate the corresponding speech audio and streams it back as a WAV audio file.
-
        Parameters:
        - request: TTSRequestModel - An object containing the voice and text data for synthesis.
-
        Returns:
        - StreamingResponse: A streaming response object that contains the synthesized speech audio as a WAV file.
-
        Raises:
        - SpeakerException: If the specified speaker ID is invalid.
        - LanguageException: If the specified language is not supported.
-
        """
 
     speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__
@@ -338,11 +336,13 @@ async def tts(request: TTSRequestModel):
     sentences = text.split('.')
 
     mp_workers = args.mp_workers
-    worker_with_args = partial(worker, speaker_id=speaker_id, model=model, use_aliases=speaker_config_attributes["use_aliases"], new_speaker_ids=speaker_config_attributes["new_speaker_ids"])
+    worker_with_args = partial(worker, speaker_id=speaker_id, model=model,
+                               use_aliases=speaker_config_attributes["use_aliases"],
+                               new_speaker_ids=speaker_config_attributes["new_speaker_ids"])
 
-    with mp.Pool(processes=mp_workers) as pool:
-        results = pool.map(worker_with_args, [sentence.strip() + '.' for sentence in sentences if sentence])
+    pool = mp.Pool(processes=mp_workers)
 
+    results = pool.map(worker_with_args, [sentence.strip() + '.' for sentence in sentences if sentence])
     # Close the pool to indicate that no more tasks will be submitted
     pool.close()
     # Wait for all processes to complete
@@ -363,44 +363,38 @@ async def play_audio(queue: asyncio.Queue, websocket: WebSocket):
 
         # check if this is the end of the stream
         if audio_chunk is None:
-            queue.task_done()
             break
 
         # send the audio chunk to the client
         await websocket.send_bytes(audio_chunk)
-
-
         # print a message for debugging
         # print(f"Sent audio chunk of {len(audio_chunk)} bytes")
         # receive any data from the client (this will return None if the connection is closed)
         # TODO needs a timeout here in case the audio is not played (or finished?) within a given time
         data = await websocket.receive()
         # check if the connection is closed
-
         if data is None:
             break
 
 
 def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker_id="f_cen_81"):
-    print(f"Processing sentence: {sentence}")
+    import requests
 
-    if speaker_id not in speaker_ids.keys():
-        raise SpeakerException(speaker_id=speaker_id)
-    # style_wav = style_wav_uri_to_dict(style_wav)
-    print(" > Model input: {}".format(sentence))
-    print(" > Speaker Idx: {}".format(speaker_id))
-    if use_aliases:
-        input_speaker_id = new_speaker_ids[speaker_id]
-    else:
-        input_speaker_id = speaker_id
+    translate_service_url = "http://127.0.0.1:8000/api/tts"
 
-    wavs = model.tts(sentence, speaker_name=input_speaker_id)
+    json_data = {
+        "voice": speaker_id,
+        "text": sentence,
+        "type": "text"
+    }
 
-    out = io.BytesIO()
+    response = requests.post(translate_service_url, json=json_data)
 
-    model.save_wav(wavs, out)
+    if response.status_code == 200:
+        return response
 
-    return out
+    return None
+
 
 @app.websocket_route("/audio-stream")
 async def stream_audio(websocket: WebSocket):
@@ -408,23 +402,12 @@ async def stream_audio(websocket: WebSocket):
 
     audio_queue = asyncio.Queue()
 
-    generator_task = player_task = None
     try:
         while True:
             received_data = await websocket.receive_json()
 
             sentences = received_data.get("text").split('.')
             speaker_id = received_data.get("speaker_id")
-
-            if generator_task:
-                generator_task.cancel()
-            if player_task:
-                player_task.cancel()
-
-            # clear the queue before creating a new task
-            while not audio_queue.empty():
-                item = audio_queue.get_nowait()
-                item.close()  # Close the BytesIO object
 
             # create a separate task for audio generation
             generator_task = asyncio.create_task(generate_audio(sentences, speaker_id, audio_queue))
@@ -433,25 +416,10 @@ async def stream_audio(websocket: WebSocket):
             player_task = asyncio.create_task(play_audio(audio_queue, websocket))
 
             # wait for both tasks to complete
-            try:
-                await asyncio.gather(asyncio.shield(generator_task), asyncio.shield(player_task))
-            except asyncio.CancelledError:
-                # Handle task cancellation here if needed
-                pass
+            await asyncio.gather(generator_task, player_task)
+
     except Exception as e:
         traceback.print_exc()
-    finally:
-        if generator_task:
-            generator_task.cancel()
-        if player_task:
-            player_task.cancel()
-
-        # clear the queue when finished
-        while not audio_queue.empty():
-            item = audio_queue.get_nowait()
-            item.close()  # Close the BytesIO object
-            audio_queue.task_done()
-
 
 
 async def generate_audio(sentences, speaker_id, audio_queue):
@@ -460,22 +428,29 @@ async def generate_audio(sentences, speaker_id, audio_queue):
 
     loop = asyncio.get_event_loop()
     with ThreadPoolExecutor() as executor:
-        for sentence in sentences:
-            sentence = sentence.strip()  # removes leading and trailing whitespaces
-            if len(sentence) > 0:  # checks if sentence is not empty after removing whitespaces
-                content = await loop.run_in_executor(
-                    executor,
-                    generate,
-                    sentence,
-                    speaker_config_attributes["speaker_ids"],
-                    model,
-                    speaker_config_attributes["new_speaker_ids"],
-                    speaker_config_attributes["use_aliases"],
-                    speaker_id
-                )
-                await audio_queue.put(content)
+        for i, sentence in enumerate(sentences):
+            if sentence:
+                content = await loop.run_in_executor(executor, generate, sentence,
+                                                     speaker_config_attributes["speaker_ids"], model,
+                                                     speaker_config_attributes["new_speaker_ids"],
+                                                     speaker_config_attributes["use_aliases"], speaker_id)
+                if content is not None:
+                    await audio_queue.put(content)
+
+            # Delete variables after the last sentence
+            if i == len(sentences) - 1:
+                del content
+                del sentence
 
     await audio_queue.put(None)  # signal that we're done generating audio
+
+    # Delete remaining variables
+    del model
+    del speaker_config_attributes
+    del loop
+    del speaker_id
+    del audio_queue
+
 
 
 def main():
