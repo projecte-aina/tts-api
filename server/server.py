@@ -1,3 +1,4 @@
+# Standard libraries for argument parsing, asynchronous programming, file operations, and system operations
 import argparse
 import asyncio
 import io
@@ -6,45 +7,62 @@ import os
 import sys
 import traceback
 import tempfile
+
+# Libraries for multiprocessing
 import multiprocessing as mp
 from multiprocessing import Process
 
+# Concurrency and utility libraries
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from itertools import chain
 from pathlib import Path
 from typing import Union
 
+# PyTorch for deep learning operations
 import torch
+
+# FastAPI and related libraries for building the web server and API
 from fastapi import FastAPI, Request, Query
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
 
+# Libraries related to the TTS (Text-to-Speech) functionality
 from TTS.config import load_config
 from TTS.utils.manage import ModelManager
 from TTS.utils.synthesizer import Synthesizer
+
+# Pydantic and starlette for data validation and websockets
 from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 from starlette.websockets import WebSocket
 
+# Custom argparse utilities (likely extending or customizing argparse functionalities)
 from utils.argparse import MpWorkersAction
 
-# global path variables
+
+# Set global paths
+# Determine the current script's directory and set up paths related to the model
 path = Path(__file__).parent / ".models.json"
 path_dir = os.path.dirname(path)
+
+# Initialize the model manager with the aforementioned path
 manager = ModelManager(path)
 
-# default tts model/files
+# Set the relative paths for the default TTS model and its associated configuration
 models_path_rel = '../models/vits_ca'
 model_ca = os.path.join(path_dir, models_path_rel, 'best_model.pth')
 config_ca = os.path.join(path_dir, models_path_rel, 'config.json')
+
 
 def create_argparser():
     def convert_boolean(x):
         return x.lower() in ["true", "1", "yes"]
 
+    # Create an argument parser to handle command-line arguments
+    # The parser setup seems incomplete and might be continued in the next section of the code.
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--list_models",
@@ -61,7 +79,6 @@ def create_argparser():
         help="Name of one of the pre-trained tts models in format <language>/<dataset>/<model_name>",
     )
     parser.add_argument("--vocoder_name", type=str, default=None, help="name of one of the released vocoder models.")
-
     # Args for running custom models
     parser.add_argument("--config_path",
                         default=config_ca,
@@ -437,7 +454,7 @@ async def play_audio(queue: asyncio.Queue, websocket: WebSocket):
             break
 
 
-def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker_id="f_cen_81"):
+def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker_id):
     print(f"Processing sentence: {sentence}")
 
     if speaker_id not in speaker_ids.keys():
@@ -472,39 +489,6 @@ def child_process(tempfile_name, sentence, input_speaker_id, model):
     wavs = model.tts(sentence, speaker_name=input_speaker_id)
     with open(tempfile_name, 'wb') as tempf:
         model.save_wav(wavs, tempf)
-
-
-# def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker_id="f_cen_81"):
-#     print(f"Processing sentence: {sentence}")
-#
-#     if speaker_id not in speaker_ids.keys():
-#         raise SpeakerException(speaker_id=speaker_id)
-#     # style_wav = style_wav_uri_to_dict(style_wav)
-#     print(" > Model input: {}".format(sentence))
-#     print(" > Speaker Idx: {}".format(speaker_id))
-#     if use_aliases:
-#         input_speaker_id = new_speaker_ids[speaker_id]
-#     else:
-#         input_speaker_id = speaker_id
-#
-#     pid = os.fork()
-#
-#     if pid == 0:
-#
-#         wavs = model.tts(sentence, speaker_name=input_speaker_id)
-#
-#         out = io.BytesIO()
-#
-#         print(f"Out: {out}")
-#         model.save_wav(wavs, out)
-#
-#         os._exit(0)
-#
-#         return out
-#
-#     else:
-#         os.wait()
-#     pass
 
 @app.websocket_route("/audio-stream")
 async def stream_audio(websocket: WebSocket):
