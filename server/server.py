@@ -1,3 +1,4 @@
+# Standard libraries for argument parsing, asynchronous programming, file operations, and system operations
 import argparse
 import asyncio
 import io
@@ -5,21 +6,30 @@ import json
 import os
 import sys
 import traceback
-import multiprocessing as mp
+import tempfile
 
+# Libraries for multiprocessing
+import multiprocessing as mp
+from multiprocessing import Process
+
+# Concurrency and utility libraries
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from itertools import chain
 from pathlib import Path
 from typing import Union
 
+# PyTorch for deep learning operations
 import torch
+
+# FastAPI and related libraries for building the web server and API
 from fastapi import FastAPI, Request, Query
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
 
+# Libraries related to the TTS (Text-to-Speech) functionality
 from TTS.config import load_config
 from TTS.utils.manage import ModelManager
 from TTS.utils.synthesizer import Synthesizer
@@ -27,14 +37,20 @@ from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 from starlette.websockets import WebSocket
 
+# Custom argparse utilities (likely extending or customizing argparse functionalities)
 from utils.argparse import MpWorkersAction
 
-# global path variables
+
+# Set global paths
+# Determine the current script's directory and set up paths related to the model
 path = Path(__file__).parent / ".models.json"
 path_dir = os.path.dirname(path)
+
+
+# Initialize the model manager with the aforementioned path
 manager = ModelManager(path)
 
-# default tts model/files
+# Set the relative paths for the default TTS model and its associated configuration
 models_path_rel = '../models/vits_ca'
 model_ca = os.path.join(path_dir, models_path_rel, 'best_model.pth')
 config_ca = os.path.join(path_dir, models_path_rel, 'config.json')
@@ -42,6 +58,9 @@ config_ca = os.path.join(path_dir, models_path_rel, 'config.json')
 def create_argparser():
     def convert_boolean(x):
         return x.lower() in ["true", "1", "yes"]
+
+    # Create an argument parser to handle command-line arguments
+    # The parser setup seems incomplete and might be continued in the next section of the code.
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -82,7 +101,7 @@ def create_argparser():
     parser.add_argument("--port", type=int, default=8000, help="port to listen on.")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="host ip to listen.")
     parser.add_argument("--use_cuda", type=convert_boolean, default=False, help="true to use CUDA.")
-    parser.add_argument("--mp_workers", action=MpWorkersAction, type=int, default=2,
+    parser.add_argument("--mp_workers", action=MpWorkersAction, type=int, default=8,
                         help="number of CPUs used for multiprocessing")
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
@@ -180,6 +199,8 @@ class SpeakerConfigAttributes:
         self.setup_speaker_attributes()
 
     def setup_speaker_attributes(self):
+
+        # global new_speaker_ids, use_aliases
 
         model = app.state.synthesizer
 
@@ -380,8 +401,12 @@ async def play_audio(queue: asyncio.Queue, websocket: WebSocket):
         if data is None:
             break
 
+def child_process(tempfile_name, sentence, input_speaker_id, model):
+    wavs = model.tts(sentence, speaker_name=input_speaker_id)
+    with open(tempfile_name, 'wb') as tempf:
+        model.save_wav(wavs, tempf)
 
-def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker_id="f_cen_81"):
+def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker_id):
     print(f"Processing sentence: {sentence}")
 
     if speaker_id not in speaker_ids.keys():
@@ -394,12 +419,22 @@ def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker
     else:
         input_speaker_id = speaker_id
 
-    wavs = model.tts(sentence, speaker_name=input_speaker_id)
+    # Create a temporary file name but do not open it
+    temp_fd, tempfile_name = tempfile.mkstemp()
+    os.close(temp_fd)
 
-    out = io.BytesIO()
+    p = Process(target=child_process, args=(tempfile_name, sentence, input_speaker_id, model))
+    p.start()
+    p.join()
 
-    model.save_wav(wavs, out)
+    # Read the data from the temp file
+    with open(tempfile_name, 'rb') as tempf:
+        out_data = tempf.read()
 
+    # Remove the temporary file
+    os.remove(tempfile_name)
+
+    out = io.BytesIO(out_data)
     return out
 
 @app.websocket_route("/audio-stream")
