@@ -472,7 +472,7 @@ async def stream_audio(websocket: WebSocket):
                 await asyncio.gather(asyncio.shield(generator_task), asyncio.shield(player_task))
             except asyncio.CancelledError:
                 # Handle task cancellation here if needed
-                pass
+                traceback.print_exc()
     except Exception as e:
         traceback.print_exc()
     finally:
