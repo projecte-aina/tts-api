@@ -14,6 +14,11 @@ spec:
       labels:
         component: tts-api
     spec:
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: {{.Values.api.dshm_size | default "2Gi" | quote }}
       containers:
         - name: api
           image: {{.Values.api.image}}:{{.Values.api.tag}}
@@ -23,3 +28,11 @@ spec:
           env:
           - name: "speech_speed"
             value: {{.Values.api.speech_speed | default "1.0" | quote }}
+<<<<<<< HEAD
+=======
+          - name: "mp_workers"
+            value: {{.Values.api.mp_workers | default "4" | quote }}
+          volumeMounts:
+          - mountPath: /dev/shm
+            name: dshm
+>>>>>>> 71113ca8724c7c4aef9911c1a379c5ea43dbe12f

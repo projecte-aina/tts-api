@@ -117,7 +117,21 @@
             }
         })
         function synthesize(text, speaker_id = "", style_wav = "") {
-            fetch(`/api/tts?text=${encodeURIComponent(text)}&speaker_id=${encodeURIComponent(speaker_id)}&style_wav=${encodeURIComponent(style_wav)}`, { cache: 'no-cache' })
+
+              const body = JSON.stringify({
+                text: text,
+                voice: speaker_id,
+                type: "text"
+              });
+
+              fetch('/api/tts', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: body,
+                cache: 'no-cache'
+              })
                 .then(function (res) {
                     if (!res.ok) throw Error(res.statusText)
                     return res.blob()
