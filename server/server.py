@@ -61,7 +61,6 @@ def create_argparser():
 
     # Create an argument parser to handle command-line arguments
     # The parser setup seems incomplete and might be continued in the next section of the code.
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--list_models",
@@ -78,7 +77,6 @@ def create_argparser():
         help="Name of one of the pre-trained tts models in format <language>/<dataset>/<model_name>",
     )
     parser.add_argument("--vocoder_name", type=str, default=None, help="name of one of the released vocoder models.")
-
     # Args for running custom models
     parser.add_argument("--config_path",
                         default=config_ca,
@@ -101,8 +99,7 @@ def create_argparser():
     parser.add_argument("--port", type=int, default=8000, help="port to listen on.")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="host ip to listen.")
     parser.add_argument("--use_cuda", type=convert_boolean, default=False, help="true to use CUDA.")
-    parser.add_argument("--mp_workers", action=MpWorkersAction, type=int, default=8,
-                        help="number of CPUs used for multiprocessing")
+    parser.add_argument("--mp_workers", action=MpWorkersAction ,type=int, default=mp.cpu_count(), help="number of CPUs used for multiprocessing")
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
     parser.add_argument("--speech_speed", type=float, default=1.0, help="Change speech speed.")
@@ -199,7 +196,6 @@ class SpeakerConfigAttributes:
         self.setup_speaker_attributes()
 
     def setup_speaker_attributes(self):
-
         # global new_speaker_ids, use_aliases
 
         model = app.state.synthesizer
@@ -319,8 +315,8 @@ def worker(sentence, speaker_id, model, use_aliases, new_speaker_ids):
 
 class TTSRequestModel(BaseModel):
     language: Union[str, None] = "ca-es"
-    voice: str
-    type: str
+    voice: str = Field(...)
+    type: str = Field(...)
     text: str = Field(..., min_length=1)
 
 
@@ -361,8 +357,9 @@ async def tts(request: TTSRequestModel):
     mp_workers = args.mp_workers
     worker_with_args = partial(worker, speaker_id=speaker_id, model=model, use_aliases=speaker_config_attributes["use_aliases"], new_speaker_ids=speaker_config_attributes["new_speaker_ids"])
 
-    with mp.Pool(processes=mp_workers) as pool:
-        results = pool.map(worker_with_args, [sentence.strip() + '.' for sentence in sentences if sentence])
+    pool = mp.Pool(processes=mp_workers)
+
+    results = pool.map(worker_with_args, [sentence.strip() + '.' for sentence in sentences if sentence])
 
     # Close the pool to indicate that no more tasks will be submitted
     pool.close()
@@ -384,36 +381,29 @@ async def play_audio(queue: asyncio.Queue, websocket: WebSocket):
 
         # check if this is the end of the stream
         if audio_chunk is None:
-            queue.task_done()
             break
 
         # send the audio chunk to the client
         await websocket.send_bytes(audio_chunk)
-
-
         # print a message for debugging
         # print(f"Sent audio chunk of {len(audio_chunk)} bytes")
         # receive any data from the client (this will return None if the connection is closed)
         # TODO needs a timeout here in case the audio is not played (or finished?) within a given time
         data = await websocket.receive()
         # check if the connection is closed
-
         if data is None:
             break
 
-def child_process(tempfile_name, sentence, input_speaker_id, model):
-    wavs = model.tts(sentence, speaker_name=input_speaker_id)
-    with open(tempfile_name, 'wb') as tempf:
-        model.save_wav(wavs, tempf)
 
 def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker_id):
     print(f"Processing sentence: {sentence}")
 
     if speaker_id not in speaker_ids.keys():
         raise SpeakerException(speaker_id=speaker_id)
-    # style_wav = style_wav_uri_to_dict(style_wav)
+
     print(" > Model input: {}".format(sentence))
     print(" > Speaker Idx: {}".format(speaker_id))
+
     if use_aliases:
         input_speaker_id = new_speaker_ids[speaker_id]
     else:
@@ -437,29 +427,23 @@ def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker
     out = io.BytesIO(out_data)
     return out
 
+def child_process(tempfile_name, sentence, input_speaker_id, model):
+    wavs = model.tts(sentence, speaker_name=input_speaker_id)
+    with open(tempfile_name, 'wb') as tempf:
+        model.save_wav(wavs, tempf)
+
 @app.websocket_route("/audio-stream")
 async def stream_audio(websocket: WebSocket):
     await websocket.accept()
 
     audio_queue = asyncio.Queue()
 
-    generator_task = player_task = None
     try:
         while True:
             received_data = await websocket.receive_json()
 
             sentences = received_data.get("text").split('.')
             speaker_id = received_data.get("speaker_id")
-
-            if generator_task:
-                generator_task.cancel()
-            if player_task:
-                player_task.cancel()
-
-            # clear the queue before creating a new task
-            while not audio_queue.empty():
-                item = audio_queue.get_nowait()
-                item.close()  # Close the BytesIO object
 
             # create a separate task for audio generation
             generator_task = asyncio.create_task(generate_audio(sentences, speaker_id, audio_queue))
@@ -468,25 +452,10 @@ async def stream_audio(websocket: WebSocket):
             player_task = asyncio.create_task(play_audio(audio_queue, websocket))
 
             # wait for both tasks to complete
-            try:
-                await asyncio.gather(asyncio.shield(generator_task), asyncio.shield(player_task))
-            except asyncio.CancelledError:
-                # Handle task cancellation here if needed
-                traceback.print_exc()
+            await asyncio.gather(generator_task, player_task)
+
     except Exception as e:
         traceback.print_exc()
-    finally:
-        if generator_task:
-            generator_task.cancel()
-        if player_task:
-            player_task.cancel()
-
-        # clear the queue when finished
-        while not audio_queue.empty():
-            item = audio_queue.get_nowait()
-            item.close()  # Close the BytesIO object
-            audio_queue.task_done()
-
 
 
 async def generate_audio(sentences, speaker_id, audio_queue):
@@ -515,7 +484,6 @@ async def generate_audio(sentences, speaker_id, audio_queue):
 
 def main():
     uvicorn.run('server:app', host=args.host, port=args.port)
-
 
 if __name__ == "__main__":
     torch.set_num_threads(1)

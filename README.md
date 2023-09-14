@@ -35,8 +35,7 @@ which gets the calls from `0.0.0.0:8000` by default
 
 tts-api has three inference endpoints, two openapi ones (as can be seen via `/docs`) and one websocket endpoint:
 
-* `/api/tts`: main inference endpoint; currently does single worker, serial inference and uses URL parameters.
-* `/api/v2/tts`: endpoint specifically designed for jambonz integration; currently does single worker, serial inference and parameters are passed through the body of the request.
+* `/api/tts`: main inference endpoint
 * `/audio-stream`: websocket endpoint; capable of doing async inference, as soon as the first segment is synthesized the audio starts streaming.
 
 The example for `/api/tts` can be found in `/docs`. The websocket request is contingent on the communication with the client, hence we provide an example client at the `/websocket-demo` enpoint. For the `api/v2/tts` the call is as the following:
