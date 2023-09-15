@@ -1,6 +1,6 @@
 version: '3.9'
 services:
-  tts-api:
+  server:
     build:
       context: .
       args:
@@ -9,4 +9,4 @@ services:
     restart: unless-stopped
     ports:
       - '8080:8000'
-    shm_size: '2gb'
+    shm_size: '1gb'

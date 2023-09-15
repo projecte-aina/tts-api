@@ -10,6 +10,6 @@ docker-compose.yml
 **/.DS_Store
 **/venv
 **/env
-**/vits_ca/best_model.pth
+**/__pycache__
 charts
 Makefile
