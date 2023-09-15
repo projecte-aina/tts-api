@@ -3,4 +3,4 @@ global:
 
 api:
   image: projecteaina/tts-api
-  tag: 1.4.0
+  tag: latest
