@@ -6,7 +6,7 @@ COPY ./requirements.txt /app
 RUN python -m pip install --upgrade pip
 RUN python -m pip install --no-cache-dir --upgrade -r requirements.txt
 
-# RUN wget -q http://share.laklak.eu/model_vits_ca/best_model.pth -P /app/models/vits_ca/
+RUN wget -q http://share.laklak.eu/model_vits_ca/best_model.pth -P /app/models/vits_ca/
 COPY . .
 
 ARG speech_speed=1.0
