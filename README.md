@@ -4,10 +4,28 @@ RestFUL api and web interface to serve coqui TTS models
 
 ## Installation
 
-The requirements are tested for python 3.7. In order for coqui TTS to work some dependencies should be installed.
+The requirements are tested for python 3.7. In order for coqui TTS to work, some dependencies should be installed.
 
+1. Update your system's package list and install the required packages for building eSpeak and general utilities:
+```bash
+sudo apt update && sudo apt install -y \
+    build-essential \
+    autoconf \
+    automake \
+    libtool \
+    pkg-config \
+    git \ 
+    wget \
+    cmake
 ```
-sudo apt-get install libsndfile1-dev espeak-ng
+2. Clone the eSpeak-ng repository and build it:
+```bash
+git clone -b dev-ca https://github.com/projecte-aina/espeak-ng
+cd espeak-ng && \
+ sudo ./autogen.sh && \
+ sudo ./configure --prefix=/usr && \
+ sudo make && \
+ sudo make install
 ```
 
 Later simply:
