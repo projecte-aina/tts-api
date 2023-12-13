@@ -270,6 +270,11 @@ async def speaker_exception_handler(request: Request, exc: LanguageException):
         content={"message": f"{exc.language} is an unknown language id.", "accept": speaker_config_attributes["languages"]},
     )
 
+@app.get("/startup-parameters")
+async def parameters():
+    return {"speech_speed": args.speech_speed, "mp_workers": args.mp_workers}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__

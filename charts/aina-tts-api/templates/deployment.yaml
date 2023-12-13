@@ -26,9 +26,9 @@ spec:
           ports:
             - containerPort: 8000
           env:
-          - name: "speech_speed"
+          - name: "SPEECH_SPEED"
             value: {{.Values.api.speech_speed | default "1.0" | quote }}
-          - name: "mp_workers"
+          - name: "MP_WORKERS"
             value: {{.Values.api.mp_workers | default "4" | quote }}
           volumeMounts:
           - mountPath: /dev/shm

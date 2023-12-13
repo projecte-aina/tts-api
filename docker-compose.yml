@@ -3,9 +3,9 @@ services:
   server:
     build:
       context: .
-      args:
-        speech_speed: ${speech_speed}
-        mp_workers: ${mp_workers}
+    environment:
+      - SPEECH_SPEED=${speech_speed}
+      - MP_WORKERS=${mp_workers}
     restart: unless-stopped
     ports:
       - '8080:8000'

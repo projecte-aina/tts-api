@@ -3,14 +3,15 @@ FROM python:3.10.12-slim
 
 # Install required packages for building eSpeak and general utilities
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    autoconf \
-    automake \
-    libtool \
-    pkg-config \
-    git \ 
-    wget \
-    cmake
+        build-essential \
+        autoconf \
+        automake \
+        libtool \
+        pkg-config \
+        git \ 
+        wget \
+        cmake \ 
+    && rm -rf /var/lib/apt/lists/*
 
 RUN git clone -b dev-ca https://github.com/projecte-aina/espeak-ng
 
@@ -30,10 +31,8 @@ RUN python -m pip install --no-cache-dir -r requirements.txt
 RUN wget -q http://share.laklak.eu/model_vits_ca/best_model.pth -P /app/models/vits_ca/
 COPY . .
 
-ARG speech_speed=1.0
-ENV speech_speed $speech_speed
+ENV SPEECH_SPEED=1.0
 
-ARG mp_workers=2
-ENV mp_workers $mp_workers
+ENV MP_WORKERS=2
 
-ENTRYPOINT python server/server.py --speech_speed $speech_speed --mp_workers $mp_workers
+ENTRYPOINT python server/server.py --speech_speed ${SPEECH_SPEED} --mp_workers ${MP_WORKERS}
