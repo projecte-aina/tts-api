@@ -18,6 +18,7 @@ from functools import partial
 from itertools import chain
 from pathlib import Path
 from typing import Union
+from pysbd import Segmenter
 
 # PyTorch for deep learning operations
 import torch
@@ -54,6 +55,9 @@ manager = ModelManager(path)
 models_path_rel = '../models/vits_ca'
 model_ca = os.path.join(path_dir, models_path_rel, 'best_model.pth')
 config_ca = os.path.join(path_dir, models_path_rel, 'config.json')
+
+# Initialize sentence segmenter
+segmenter = Segmenter(language="en")
 
 def create_argparser():
     def convert_boolean(x):
@@ -357,14 +361,14 @@ async def tts(request: TTSRequestModel):
 
     model = app.state.synthesizer
 
-    sentences = text.split('.')
+    sentences = segmenter.segment(text)
 
     mp_workers = args.mp_workers
     worker_with_args = partial(worker, speaker_id=speaker_id, model=model, use_aliases=speaker_config_attributes["use_aliases"], new_speaker_ids=speaker_config_attributes["new_speaker_ids"])
 
     pool = mp.Pool(processes=mp_workers)
 
-    results = pool.map(worker_with_args, [sentence.strip() + '.' for sentence in sentences if sentence])
+    results = pool.map(worker_with_args, [sentence.strip() for sentence in sentences if sentence])
 
     # Close the pool to indicate that no more tasks will be submitted
     pool.close()
