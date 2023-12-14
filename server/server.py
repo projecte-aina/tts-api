@@ -276,8 +276,17 @@ async def speaker_exception_handler(request: Request, exc: LanguageException):
 
 @app.get("/startup-parameters")
 async def parameters():
-    return {"speech_speed": args.speech_speed, "mp_workers": args.mp_workers}
+    return JSONResponse(
+        content={"speech_speed": args.speech_speed, "mp_workers": args.mp_workers},
+    )
 
+@app.get("/api/available-voices")
+async def available_voices():
+    speaker_config_attributes = app.state.SpeakerConfigAttributes.__dict__
+
+    return JSONResponse(
+        content={"voices": list(speaker_config_attributes["speaker_ids"].keys())},
+    )
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
