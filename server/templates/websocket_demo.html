@@ -118,9 +118,9 @@
             }
 
             if (socket && socket.readyState === WebSocket.OPEN) {
-                console.log({text: textInput.value, speaker_id: speaker_id.value })
+                console.log({text: textInput.value, voice: speaker_id.value })
 
-                socket.send(JSON.stringify({text: textInput.value, speaker_id: speaker_id.value }));
+                socket.send(JSON.stringify({text: textInput.value, voice: speaker_id.value }));
             }
 
             stopButton.disabled = false;

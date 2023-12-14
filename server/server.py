@@ -460,11 +460,11 @@ async def stream_audio(websocket: WebSocket):
         while True:
             received_data = await websocket.receive_json()
 
-            sentences = received_data.get("text").split('.')
-            speaker_id = received_data.get("speaker_id")
+            sentences = segmenter.segment(received_data.get("text"))
+            voice = received_data.get("voice")
 
             # create a separate task for audio generation
-            generator_task = asyncio.create_task(generate_audio(sentences, speaker_id, audio_queue))
+            generator_task = asyncio.create_task(generate_audio(sentences, voice, audio_queue))
 
             # create a task for audio playing
             player_task = asyncio.create_task(play_audio(audio_queue, websocket))
