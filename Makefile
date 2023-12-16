@@ -1,8 +1,7 @@
-speech_speed ?= 1.0
-mp_workers ?= 4
-
 deploy:
-	speech_speed=$(speech_speed) mp_workers=$(mp_workers) docker compose up -d --build
+	docker compose --env-file .env up -d --build
+deploy-gpu: 
+	docker compose -f docker-compose-gpu.yml --env-file .env up -d --build
 undeploy:
 	docker compose down
 stop:

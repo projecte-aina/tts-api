@@ -1,4 +1,4 @@
-# TTS Api
+# TTS API
 
 RestFUL api and web interface to serve coqui TTS models
 
@@ -130,7 +130,6 @@ POST /api/tts
 }
 ```
 
-## Deployment
 
 #### Command line deployment arguments
 | **Argument**           | **Type** | **Default**                             | **Description**                                                               |
@@ -143,18 +142,61 @@ POST /api/tts
 - The "speech_speed" argument refers to a parameter that adjusts the rate at which speech sounds in an audio output, with higher values resulting in faster speech, and lower values leading to slower speech.
 
 
-#### Deployment via docker compose
+## Deployment
 
+
+### Environment Variables
+
+To deploy this project, you will need to add the following environment variables to your .env file
+
+`SPEECH_SPEED`
+
+`MP_WORKERS`
+
+`USE_CUDA`
+
+`USE_MP`
+
+`SHM_SIZE`
+
+
+Example of .env file
+```bash
+SPEECH_SPEED=1.0
+MP_WORKERS=4
+USE_CUDA=False
+USE_MP=True
+SHM_SIZE=2gb
+```
+
+
+### Deployment via docker compose
+
+#### Prerequisites
+
+- Make
+
+- [Docker](https://docs.docker.com/engine/install/ubuntu/)
+
+- [Docker compose](https://docs.docker.com/compose/install/)
+
+To deploy this app
 ```bash
 make deploy
 ```
-Example of deployment changing speech_speed parameter
 
+To deploy this app using GPU
 ```bash
-make deploy speech_speed=1.5 
+make deploy-gpu
 ```
-
-The example docker-compose file shows also the build-arg usage for the speech_speed parameter.
+To stop deployment run
+```bash
+make stop
+```
+To delete deployment run
+```bash
+make undeploy
+```
 
 #### Deployment via Helm
 
@@ -188,7 +230,7 @@ helm upgrade --install aina-tts-api --create-namespace \
 ```
 
 ## Authors and acknowledgment
-Developed by the Text Mining Unit in Barcelona Supercomputing Center. The code is based on Coqui TTS server.py that has a Mozilla Public License 2.0.
+Developed by the Language Technologies Unit in Barcelona Supercomputing Center. The code is based on Coqui TTS server.py that has a Mozilla Public License 2.0.
 
 ## License
 Mozilla Public License 2.0

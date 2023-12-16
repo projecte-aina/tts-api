@@ -31,8 +31,4 @@ RUN python -m pip install --no-cache-dir -r requirements.txt
 RUN wget -q http://share.laklak.eu/model_vits_ca/best_model.pth -P /app/models/vits_ca/
 COPY . .
 
-ENV SPEECH_SPEED=1.0
-
-ENV MP_WORKERS=2
-
-ENTRYPOINT python server/server.py --speech_speed ${SPEECH_SPEED} --mp_workers ${MP_WORKERS}
+ENTRYPOINT python server/server.py --speech_speed ${SPEECH_SPEED} --mp_workers ${MP_WORKERS} --use_cuda ${USE_CUDA} --use_mp ${USE_MP}

@@ -102,11 +102,12 @@ def create_argparser():
     parser.add_argument("--speakers_file_path", type=str, help="JSON file for multi-speaker model.", default=None)
     parser.add_argument("--port", type=int, default=8000, help="port to listen on.")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="host ip to listen.")
-    parser.add_argument("--use_cuda", type=convert_boolean, default=False, help="true to use CUDA.")
-    parser.add_argument("--mp_workers", action=MpWorkersAction ,type=int, default=mp.cpu_count(), help="number of CPUs used for multiprocessing")
+    parser.add_argument("--use_mp", type=convert_boolean, default=True, nargs='?', const=True, help="true to use Python multiprocessing.")
+    parser.add_argument("--use_cuda", type=convert_boolean, default=False, nargs='?', const=False, help="true to use CUDA.")
+    parser.add_argument("--mp_workers", action=MpWorkersAction ,type=int, default=mp.cpu_count(), nargs='?', const=mp.cpu_count(), help="number of CPUs used for multiprocessing")
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
-    parser.add_argument("--speech_speed", type=float, default=1.0, help="Change speech speed.")
+    parser.add_argument("--speech_speed", type=float, default=1.0, nargs='?', const=1.0, help="Change speech speed.")
     return parser
 
 
@@ -277,7 +278,7 @@ async def speaker_exception_handler(request: Request, exc: LanguageException):
 @app.get("/startup-parameters")
 async def parameters():
     return JSONResponse(
-        content={"speech_speed": args.speech_speed, "mp_workers": args.mp_workers},
+        content={"speech_speed": args.speech_speed, "mp_workers": args.mp_workers, "use_cuda": args.use_cuda, "use_mp": args.use_mp},
     )
 
 @app.get("/api/available-voices")
@@ -370,24 +371,30 @@ async def tts(request: TTSRequestModel):
 
     model = app.state.synthesizer
 
-    sentences = segmenter.segment(text)
+    if args.use_cuda or not args.use_mp:
+        wavs = worker(text, speaker_id=speaker_id, model=model, use_aliases=speaker_config_attributes["use_aliases"], new_speaker_ids=speaker_config_attributes["new_speaker_ids"])
+        out = io.BytesIO()
+        model.save_wav(wavs, out)
+    else:
 
-    mp_workers = args.mp_workers
-    worker_with_args = partial(worker, speaker_id=speaker_id, model=model, use_aliases=speaker_config_attributes["use_aliases"], new_speaker_ids=speaker_config_attributes["new_speaker_ids"])
+        sentences = segmenter.segment(text)
 
-    pool = mp.Pool(processes=mp_workers)
+        mp_workers = args.mp_workers
+        worker_with_args = partial(worker, speaker_id=speaker_id, model=model, use_aliases=speaker_config_attributes["use_aliases"], new_speaker_ids=speaker_config_attributes["new_speaker_ids"])
 
-    results = pool.map(worker_with_args, [sentence.strip() for sentence in sentences if sentence])
+        pool = mp.Pool(processes=mp_workers)
 
-    # Close the pool to indicate that no more tasks will be submitted
-    pool.close()
-    # Wait for all processes to complete
-    pool.join()
-    merged_wavs = list(chain(*results))
+        results = pool.map(worker_with_args, [sentence.strip() for sentence in sentences if sentence])
 
-    out = io.BytesIO()
+        # Close the pool to indicate that no more tasks will be submitted
+        pool.close()
+        # Wait for all processes to complete
+        pool.join()
+        merged_wavs = list(chain(*results))
 
-    model.save_wav(merged_wavs, out)
+        out = io.BytesIO()
+
+        model.save_wav(merged_wavs, out)
 
     return StreamingResponse(out, media_type="audio/wav")
 
