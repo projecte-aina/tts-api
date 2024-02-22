@@ -22,6 +22,8 @@ RUN pip install --upgrade pip && \
  make && \
  make install
 
+RUN git clone https://github.com/MycroftAI/lingua-franca.git
+RUN pip install lingua-franca/
 
 WORKDIR /app
 COPY ./requirements.txt /app
