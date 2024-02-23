@@ -345,7 +345,7 @@ def worker(sentence, speaker_id, model, use_aliases, new_speaker_ids):
             H = int(match[0])
             M = int(match[1])
             dt = datetime.datetime(2017, 1, 31, H, M, 0, tzinfo=default_timezone())  # Using UTC timezone for simplicity
-            formatted_time = nice_time(dt, lang="ca")  # Assuming you have a function to format time in Catalan
+            formatted_time = nice_time(dt, lang="ca", use_24hour=True)  # Assuming you have a function to format time in Catalan
             sentence = sentence.replace(f'{match[0]}:{match[1]}', formatted_time)
 
         return sentence
