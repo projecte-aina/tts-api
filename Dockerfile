@@ -29,7 +29,8 @@ COPY ./requirements.txt /app
 RUN python -m pip install --upgrade pip
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
-RUN wget -q http://share.laklak.eu/model_vits_ca/best_model.pth -P /app/models/vits_ca/
+RUN wget -q http://share.laklak.eu/model_vits_ca/best_model_8khz.pth -P /app/models/vits_ca/
+RUN mv /app/models/vits_ca/best_model_8khz.pth /app/models/vits_ca/best_model.pth
 COPY . .
 
 ENTRYPOINT python server/server.py --speech_speed ${SPEECH_SPEED} --mp_workers ${MP_WORKERS} --use_cuda ${USE_CUDA} --use_mp ${USE_MP}
