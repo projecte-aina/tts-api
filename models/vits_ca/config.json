@@ -1,7 +1,7 @@
 {
     "output_path": "/mnt/netapp1/Proxecto_NOS/bsc/tts/training_outputs/0.14.3",
     "logger_uri": null,
-    "run_name": "newdata_1e-4_2e-4_multisteplr",
+    "run_name": "8kHz_vits_V2_lr_diff_1_5_m4_hop_96_ignore_teo_reduced_finetuning",
     "project_name": null,
     "run_description": "",
     "print_step": 25,
@@ -11,8 +11,8 @@
     "dashboard_logger": "tensorboard",
     "save_on_interrupt": true,
     "log_model_step": 1000,
-    "save_step": 2500,
-    "save_n_checkpoints": 20,
+    "save_step": 10000,
+    "save_n_checkpoints": 6,
     "save_checkpoints": true,
     "save_all_best": false,
     "save_best_after": 10000,
@@ -25,15 +25,15 @@
     "distributed_url": "tcp://localhost:54321",
     "mixed_precision": false,
     "precision": "fp16",
-    "epochs": 1000,
+    "epochs": 550,
     "batch_size": 64,
     "eval_batch_size": 8,
     "grad_clip": [
         1000.0,
         1000.0
     ],
-    "scheduler_after_epoch": true,
-    "lr": 0.001,
+    "scheduler_after_epoch": false,
+    "lr": 0.0007,
     "optimizer": "AdamW",
     "optimizer_params": {
         "betas": [
@@ -43,8 +43,13 @@
         "eps": 1e-09,
         "weight_decay": 0.01
     },
-    "lr_scheduler": "",
-    "lr_scheduler_params": null,
+    "lr_scheduler": "MultiStepLR",
+    "lr_scheduler_params": {
+        "gamma": 0.6,
+        "milestones": [
+            1000000
+        ]
+    },
     "use_grad_scaler": false,
     "allow_tf32": false,
     "cudnn_enable": true,
@@ -57,9 +62,9 @@
     "use_noise_augment": false,
     "audio": {
         "fft_size": 1024,
-        "sample_rate": 16000,
-        "win_length": 1024,
-        "hop_length": 256,
+        "sample_rate": 8000,
+        "win_length": 512,
+        "hop_length": 96,
         "num_mels": 80,
         "mel_fmin": 60,
         "mel_fmax": null
@@ -71,13 +76,13 @@
     "text_cleaner": "basic_cleaners",
     "enable_eos_bos_chars": false,
     "test_sentences_file": "",
-    "phoneme_cache_path": "/mnt/netapp1/Proxecto_NOS/bsc/tts/training_outputs/catalan_phoneme_cache_21_09_2023",
+    "phoneme_cache_path": "/mnt/netapp1/Proxecto_NOS/bsc/tts/training_outputs/0.14.3/phoneme_cache_festcat_google_10_01_2024",
     "characters": {
         "characters_class": "TTS.tts.models.vits.VitsCharacters",
         "vocab_dict": null,
         "pad": "_",
-        "eos": "",
-        "bos": "",
+        "eos": "<EOS>",
+        "bos": "<BOS>",
         "blank": null,
         "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
         "punctuations": ";:,.!?\u00a1\u00bf\u2014\u2026\"\u00ab\u00bb\u201c\u201d ",
@@ -88,24 +93,26 @@
     "add_blank": true,
     "batch_group_size": 0,
     "loss_masking": null,
-    "min_audio_len": 4000,
-    "max_audio_len": 200000,
+    "min_audio_len": 8000,
+    "max_audio_len": 100000,
     "min_text_len": 3,
-    "max_text_len": 115,
+    "max_text_len": 175,
     "compute_f0": false,
     "compute_energy": false,
     "compute_linear_spec": true,
     "precompute_num_workers": 0,
     "start_by_longest": false,
-    "shuffle": false,
-    "drop_last": false,
+    "shuffle": true,
+    "drop_last": true,
     "datasets": [
         {
             "formatter": "vctk_old",
-            "dataset_name": "vctk_old",
-            "path": "/mnt/netapp1/Proxecto_NOS/bsc/speech_data/multispeaker_ca_data_filt",
+            "dataset_name": "vctk_old_mos_filter",
+            "path": "/mnt/netapp1/Proxecto_NOS/bsc/speech_data/fest_google_vctk_denoised_8khz",
             "meta_file_train": "",
-            "ignored_speakers": null,
+            "ignored_speakers": [
+                "teo"
+            ],
             "language": "ca",
             "phonemizer": "",
             "meta_file_val": "",
@@ -114,16 +121,20 @@
     ],
     "test_sentences": [
         [
-            "Per exemple, dels nostres bancs que inverteixen en armament de les nostres empreses."
+            "Per exemple, dels nostres bancs que inverteixen en armament de les nostres empreses.",
+            "uri"
         ],
         [
-            "Preguntin-se si aix\u00f2 era necessari."
+            "Preguntin-se si aix\u00f2 era necessari.",
+            "ona"
         ],
         [
-            "La suposada ocultaci\u00f3 dels informes que advertien de risc s\u00edsmic."
+            "La suposada ocultaci\u00f3 dels informes que advertien de risc s\u00edsmic.",
+            "pau"
         ],
         [
-            "\u00c9s de 633 milions d'euros quan es far\u00e0 la publicaci\u00f3 detallada."
+            "\u00c9s de 633 milions d'euros quan es far\u00e0 la publicaci\u00f3 detallada.",
+            "eva"
         ]
     ],
     "eval_split_max_size": null,
@@ -137,7 +148,7 @@
     "model_args": {
         "num_chars": 179,
         "out_channels": 513,
-        "spec_segment_size": 32,
+        "spec_segment_size": 64,
         "hidden_channels": 192,
         "hidden_channels_ffn_text_encoder": 768,
         "num_heads_text_encoder": 2,
@@ -146,46 +157,41 @@
         "dropout_p_text_encoder": 0.1,
         "dropout_p_duration_predictor": 0.5,
         "kernel_size_posterior_encoder": 5,
-        "dilation_rate_posterior_encoder": 1,
-        "num_layers_posterior_encoder": 16,
+        "dilation_rate_posterior_encoder": 2,
+        "num_layers_posterior_encoder": 8,
         "kernel_size_flow": 5,
         "dilation_rate_flow": 1,
         "num_layers_flow": 4,
-        "resblock_type_decoder": "1",
+        "resblock_type_decoder": "2",
         "resblock_kernel_sizes_decoder": [
             3,
-            7,
-            11
+            5,
+            7
         ],
         "resblock_dilation_sizes_decoder": [
             [
                 1,
-                3,
-                5
+                2
             ],
             [
-                1,
-                3,
-                5
+                2,
+                6
             ],
             [
-                1,
                 3,
-                5
+                12
             ]
         ],
         "upsample_rates_decoder": [
             8,
-            8,
-            2,
-            2
+            4,
+            3
         ],
-        "upsample_initial_channel_decoder": 512,
+        "upsample_initial_channel_decoder": 256,
         "upsample_kernel_sizes_decoder": [
             16,
-            16,
-            4,
-            4
+            8,
+            5
         ],
         "periods_multi_period_discriminator": [
             2,
@@ -199,7 +205,7 @@
         "inference_noise_scale": 0.667,
         "length_scale": 1.0,
         "noise_scale_dp": 1.0,
-        "inference_noise_scale_dp": 0.8,
+        "inference_noise_scale_dp": 1.0,
         "max_inference_len": null,
         "init_discriminator": true,
         "use_spectral_norm_disriminator": false,
@@ -230,26 +236,20 @@
         "reinit_text_encoder": false
     },
     "lr_gen": 0.0002,
-    "lr_disc": 0.0001,
+    "lr_disc": 0.0002,
     "lr_scheduler_gen": "MultiStepLR",
     "lr_scheduler_gen_params": {
+        "gamma": 0.6,
         "milestones": [
-            10,
-            35,
-            65
-        ],
-        "gamma": 0.5,
-        "last_epoch": -1
+            1000000
+        ]
     },
     "lr_scheduler_disc": "MultiStepLR",
     "lr_scheduler_disc_params": {
+        "gamma": 0.6,
         "milestones": [
-            10,
-            35,
-            65
-        ],
-        "gamma": 0.5,
-        "last_epoch": -1
+            1000000
+        ]
     },
     "kl_loss_alpha": 1.0,
     "disc_loss_alpha": 1.0,
