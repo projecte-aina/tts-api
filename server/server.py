@@ -330,7 +330,7 @@ async def details(request: Request):
 def worker(sentence, speaker_id, model, use_aliases, new_speaker_ids):
     def substitute_time(sentence):
         # Regular expression to find time pattern (HH:MM)
-        time_pattern = re.compile(r'(\d{1,2}):(\d{2})')
+        time_pattern = re.compile(r'((?<=\s)\d{1,2}):(\d{2}(?=\s))')
 
         # Find all matches of time pattern in the sentence
         matches = re.findall(time_pattern, sentence)
