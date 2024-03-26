@@ -118,6 +118,7 @@ def create_argparser():
     parser.add_argument("--debug", type=convert_boolean, default=False, help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False, help="Generate model detail page.")
     parser.add_argument("--speech_speed", type=float, default=1.0, nargs='?', const=1.0, help="Change speech speed.")
+    parser.add_argument("--reload", type=bool, action=argparse.BooleanOptionalAction, default=False, help="Reload on changes")
     return parser
 
 
@@ -541,7 +542,7 @@ async def generate_audio(sentences, speaker_id, audio_queue):
 
 
 def main():
-    uvicorn.run('server:app', host=args.host, port=args.port)
+    uvicorn.run('server:app', host=args.host, port=args.port, reload=args.reload)
 
 if __name__ == "__main__":
     torch.set_num_threads(1)
