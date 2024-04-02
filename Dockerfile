@@ -33,4 +33,4 @@ RUN wget -q http://share.laklak.eu/model_vits_ca/best_model_8khz.pth -P /app/mod
 RUN mv /app/models/vits_ca/best_model_8khz.pth /app/models/vits_ca/best_model.pth
 COPY . .
 
-ENTRYPOINT python server/server.py --speech_speed ${SPEECH_SPEED} --mp_workers ${MP_WORKERS} --use_cuda ${USE_CUDA} --use_mp ${USE_MP}
+ENTRYPOINT python main.py --speech_speed ${SPEECH_SPEED} --mp_workers ${MP_WORKERS} --use_cuda ${USE_CUDA} --use_mp ${USE_MP}
