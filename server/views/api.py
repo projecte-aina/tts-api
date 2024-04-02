@@ -33,13 +33,13 @@ route.mount("/static", StaticFiles(directory=os.path.join(path_dir, "static")), 
 templates = Jinja2Templates(directory=os.path.join(path_dir, "templates"))
 
 @route.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+def index(request: Request):
     speaker_config_attributes = Config().speakerConfigAttributes.__dict__
     return templates.TemplateResponse("index.html", {"request": request, **speaker_config_attributes})
 
 
 @route.get("/startup-parameters")
-async def parameters():
+def parameters():
     config = Config()
     return JSONResponse(
         content={"speech_speed": config.speech_speed, "mp_workers": config.mp_workers, "use_cuda": config.use_cuda, "use_mp": config.use_mp},
@@ -47,12 +47,12 @@ async def parameters():
 
 
 @route.get("/websocket-demo", response_class=HTMLResponse)
-async def websocket_demo(request: Request):
+def websocket_demo(request: Request):
     speaker_config_attributes = Config().speakerConfigAttributes.__dict__
     return templates.TemplateResponse("websocket_demo.html",{"request": request, **speaker_config_attributes})
 
 @route.get("/details", response_class=HTMLResponse)
-async def details(request: Request):
+def details(request: Request):
     config = Config()
     model_config = load_config(config.config_path)
     if config.vocoder_config_path is not None and os.path.isfile(config.vocoder_config_path):
@@ -70,7 +70,7 @@ async def details(request: Request):
     )
 
 @route.get("/api/available-voices")
-async def available_voices():
+def available_voices():
     speaker_config_attributes = Config().speakerConfigAttributes.__dict__
 
     return JSONResponse(
@@ -79,7 +79,7 @@ async def available_voices():
 
 
 @route.post("/api/tts")
-async def tts(request: TTSRequestModel):
+def tts(request: TTSRequestModel):
     """
        Text-to-Speech API endpoint.
 
@@ -138,7 +138,6 @@ async def tts(request: TTSRequestModel):
         model.save_wav(merged_wavs, out)
 
     return StreamingResponse(out, media_type="audio/wav")
-
 
 
 @route.websocket_route("/audio-stream")
