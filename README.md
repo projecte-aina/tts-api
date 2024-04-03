@@ -92,6 +92,22 @@ docker run --shm-size=1gb -p 8080:8000 tts-api
 The default entrypoint puts the web interface to `http://0.0.0.0:8080/`.
 
 
+## Developer Mode
+You can run this api with docker with reload mode that will let you watch you local changes on api.<br>
+To run in dev mode run the following command.
+
+```bash
+make dev
+```
+
+> [!NOTE]
+> The model **best_model.pth** is requiered, you have to download by yourself.
+```bash
+wget -q http://share.laklak.eu/model_vits_ca/best_model_8khz.pth -P models/vits_ca/
+```
+```bash
+mv models/vits_ca/best_model_8khz.pth models/vits_ca/best_model.pth
+```
 
 ## REST API Endpoints
 
