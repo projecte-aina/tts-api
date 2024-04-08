@@ -4,7 +4,7 @@ from server.helper.config import Config
 from server.exceptions import LanguageException, SpeakerException
 from server.exception_handler import language_exception_handler, speaker_exception_handler
 from server.views.health import health
-from server.views.api import route
+from server.views.api.api import route
 
 
 def create_app(model_path, config_path, speakers_file_path, 

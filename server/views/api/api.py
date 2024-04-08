@@ -27,8 +27,7 @@ from server.workers.workers import worker
 route = APIRouter(prefix='')
 # Initialize sentence segmenter
 segmenter = Segmenter(language="en")
-path_dir = os.path.dirname(os.path.abspath(Path(__file__).parent))
-
+path_dir = os.path.dirname(os.path.abspath(Path(__file__).parent.parent))
 route.mount("/static", StaticFiles(directory=os.path.join(path_dir, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(path_dir, "templates"))
 
@@ -125,7 +124,7 @@ def tts(request: TTSRequestModel):
 
         pool = mp.Pool(processes=mp_workers)
 
-        results = pool.map(worker_with_args, [sentence.strip() for sentence in sentences if sentence])
+        results = pool.map_async(worker_with_args, [sentence.strip() for sentence in sentences if sentence])
 
         # Close the pool to indicate that no more tasks will be submitted
         pool.close()

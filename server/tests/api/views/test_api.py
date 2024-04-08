@@ -52,6 +52,7 @@ class TestApi(APIBaseTestCase):
         assert voices == ["f_cen_095","f_cen_092","m_occ_072","m_cen_pau","m_occ_7b7","m_val_51c","f_cen_063","f_cen_051"]
 
 
+    @pytest.mark.repeat(25)
     def test_multi_larger_text(self):
         options = {
             "voice": "f_cen_095",
