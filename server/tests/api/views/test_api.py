@@ -59,7 +59,6 @@ class TestApi(APIBaseTestCase):
             "type": "text",
             "text": ""
         }
-
         for sentence in texts:
             options["text"] = sentence
 
