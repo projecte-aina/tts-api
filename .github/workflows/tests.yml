@@ -37,13 +37,13 @@ jobs:
         run:  |
           sudo apt-get update
           sudo apt-get install -y build-essential autoconf automake libtool pkg-config git wget cmake
-          rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /var/lib/apt/lists/*
       
       - name: install espeak-ng
         run:  |
           git clone -b dev-ca https://github.com/projecte-aina/espeak-ng
           pip install --upgrade pip 
-          cd espeak-ng && ./autogen.sh && ./configure --prefix=/usr && make && make install
+          cd espeak-ng && sudo ./autogen.sh && sudo ./configure --prefix=/usr && sudo make && sudo make install
 
       - name: install lingua-franca
         run: pip install git+https://github.com/MycroftAI/lingua-franca.git@5bfd75fe5996fd364102a0eec3f714c9ddc9275c
