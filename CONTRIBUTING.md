@@ -22,7 +22,7 @@ If you don't know where to start, there is a special [Good First
 Issue](https://github.com/projecte-aina/tts-api/contribute) listing. It will give you a list of
 open issues that are beginner-friendly and help you start contributing to open-source. The best way to do that is to open a Pull Request and link it to the issue that you'd like to work on. We try to give priority to opened PRs as we can easily track the progress of the fix, and if the contributor does not have time anymore, someone else can take the PR over.
 
-For something slightly more challenging, you can also take a look at the [Good Second Issue](F/labels/Good%20Second%20Issue) list. In general though, if you feel like you know what you're doing, go for it and we'll help you get there! 🚀
+For something slightly more challenging, you can also take a look at the [Good Second Issue](/labels/Good%20Second%20Issue) list. In general though, if you feel like you know what you're doing, go for it and we'll help you get there! 🚀
 
 > All contributions are equally valuable to the community. 🥰
 
@@ -107,7 +107,7 @@ You'll need **Python 3.10** or above to contribute to. Follow the steps below to
 
     - Manually install the dependences and setup the environment, follow the steps at [README](https://github.com/projecte-aina/tts-api?tab=readme-ov-file#installation).
     
-    - Develop in docker with autoreload, follow the steps available at the [DEVELOPER MODE](https://github.com/projecte-aina/tts-api?tab=readme-ov-file#developer-in-docker) section 
+    - Develop in docker with autoreload, follow the steps available at the [DEVELOPER MODE](https://github.com/projecte-aina/tts-api?tab=readme-ov-file#develop-in-docker) section 
 
 
 5. Develop the features in your branch.
