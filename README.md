@@ -92,8 +92,9 @@ docker run --shm-size=1gb -p 8080:8000 tts-api
 The default entrypoint puts the web interface to `http://0.0.0.0:8080/`.
 
 
-## Developer Mode
-You can run this api with docker with reload mode that will let you watch you local changes on api.<br>
+## Develop in docker
+You can run this api with docker with reload mode that will let you watch you local changes on api.
+
 To run in dev mode run the following command.
 
 ```bash
