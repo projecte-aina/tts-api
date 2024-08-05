@@ -1,0 +1,6 @@
+global:
+  namespace: apps
+
+api:
+  image: projecteaina/tts-api
+  tag: latest

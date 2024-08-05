@@ -1,0 +1,9 @@
+# tts==0.17.6
+
+numpy
+scipy
+soundfile
+torch
+onnxruntime
+fastapi==0.103.2
+uvicorn[standard]

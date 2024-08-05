@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tts-api
+  namespace: {{.Values.global.namespace}}
+  labels:
+    component: tts-api
+spec:
+  selector:
+    matchLabels:
+      component: tts-api
+  template:
+    metadata:
+      labels:
+        component: tts-api
+    spec:
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: {{.Values.api.dshm_size | default "2Gi" | quote }}
+      containers:
+        - name: api
+          image: {{.Values.api.image}}:{{.Values.api.tag}}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          env:
+          - name: "SPEECH_SPEED"
+            value: {{.Values.api.speech_speed | default "1.0" | quote }}
+          - name: "MP_WORKERS"
+            value: {{.Values.api.mp_workers | default "4" | quote }}
+          volumeMounts:
+          - mountPath: /dev/shm
+            name: dshm
