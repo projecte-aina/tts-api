@@ -2,6 +2,6 @@
 *.pth
 *.json
 models
-venv*
-__pycache__
-**/.env
+!models/matxa_onnx/spk_ids.json
+venv/
+**/__pycache__/

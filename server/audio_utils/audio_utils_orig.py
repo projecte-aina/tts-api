@@ -8,7 +8,6 @@ from starlette.websockets import WebSocket
 
 from server.exceptions import SpeakerException
 from server.helper.config import ConfigONNX
-from server.workers.workers import worker_onnx_audio
 
 
 async def play_audio(queue: asyncio.Queue, websocket: WebSocket):
@@ -34,10 +33,7 @@ async def play_audio(queue: asyncio.Queue, websocket: WebSocket):
 
 async def generate_audio(sentences, speaker_id, audio_queue):
     config = ConfigONNX()
-    model_tts = config.model_tts
-    vocoder = config.vocoder
-    speaking_rate = config.speech_speed
-    temperature = config.temperature
+    model = config.synthesizer
     speaker_config_attributes = config.speakerConfigAttributes.__dict__
 
     loop = asyncio.get_event_loop()
@@ -50,21 +46,17 @@ async def generate_audio(sentences, speaker_id, audio_queue):
                     generate,
                     sentence,
                     speaker_config_attributes["speaker_ids"],
-                    model_tts,
-                    vocoder,
+                    model,
                     speaker_config_attributes["new_speaker_ids"],
                     speaker_config_attributes["use_aliases"],
-                    speaker_id,
-                    speaking_rate,
-                    temperature
+                    speaker_id
                 )
                 await audio_queue.put(content)
 
     await audio_queue.put(None)  # signal that we're done generating audio
 
 
-def generate(sentence, speaker_ids, model_tts, vocoder, new_speaker_ids, use_aliases, speaker_id,
-             speaking_rate, temperature):
+def generate(sentence, speaker_ids, model, new_speaker_ids, use_aliases, speaker_id):
     print(f"Processing sentence: {sentence}")
 
     if speaker_id not in speaker_ids.keys():
@@ -82,8 +74,7 @@ def generate(sentence, speaker_ids, model_tts, vocoder, new_speaker_ids, use_ali
     temp_fd, tempfile_name = tempfile.mkstemp()
     os.close(temp_fd)
 
-    p = Process(target=child_process, args=(tempfile_name, sentence, input_speaker_id, model_tts, vocoder,
-                                            speaking_rate, temperature))
+    p = Process(target=child_process, args=(tempfile_name, sentence, input_speaker_id, model))
     p.start()
     p.join()
 
@@ -98,9 +89,7 @@ def generate(sentence, speaker_ids, model_tts, vocoder, new_speaker_ids, use_ali
     return out
 
 
-def child_process(tempfile_name, sentence, input_speaker_id, model_tts, vocoder, speaking_rate, temperature):
-    # sentence, speaker_id, model, vocoder_model, use_aliases, new_speaker_ids, temperature, speaking_rate
-    wavs = worker_onnx_audio(sentence, speaker_id=input_speaker_id, model=model_tts, vocoder_model=vocoder,
-                             temperature=temperature, speaking_rate=speaking_rate)
+def child_process(tempfile_name, sentence, input_speaker_id, model):
+    wavs = model.tts(sentence, speaker_name=input_speaker_id)
     with open(tempfile_name, 'wb') as tempf:
         model.save_wav(wavs, tempf)

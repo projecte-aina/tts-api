@@ -22,15 +22,11 @@ RUN pip install --upgrade pip && \
  make && \
  make install
 
-RUN pip install git+https://github.com/MycroftAI/lingua-franca.git@5bfd75fe5996fd364102a0eec3f714c9ddc9275c
-
 WORKDIR /app
 COPY ./requirements.txt /app
-RUN python -m pip install --upgrade pip
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN wget -q http://share.laklak.eu/model_vits_ca/best_model_8khz.pth -P /app/models/vits_ca/
-RUN mv /app/models/vits_ca/best_model_8khz.pth /app/models/vits_ca/best_model.pth
 COPY . .
 
-ENTRYPOINT python main.py --speech_speed ${SPEECH_SPEED} --mp_workers ${MP_WORKERS} --use_cuda ${USE_CUDA} --use_mp ${USE_MP}
+ENTRYPOINT python main.py --speech_speed ${SPEECH_SPEED} --use_cuda ${USE_CUDA}
