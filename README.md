@@ -110,12 +110,7 @@ https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matc
 Note: You will need a Huggingface account because the model privacity is setted to gated.
 
 Rename the onnx model to best_model.onnx and move it to /models/matxa_onnx folder
-```bash
-wget -q http://share.laklak.eu/model_vits_ca/best_model_8khz.pth -P models/vits_ca/
-```
-```bash
-mv models/vits_ca/best_model_8khz.pth models/vits_ca/best_model.pth
-```
+
 
 ## REST API Endpoints
 
