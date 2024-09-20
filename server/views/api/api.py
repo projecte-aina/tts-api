@@ -46,7 +46,7 @@ def index(request: Request):
 def parameters():
     config = ConfigONNX()
     return JSONResponse(
-        content={"speech_speed": config.speech_speed, "mp_workers": config.mp_workers, "use_cuda": config.use_cuda, "use_mp": config.use_mp},
+        content={"speech_speed": config.speech_speed, "use_cuda": config.use_cuda},
     )
 
 
@@ -135,87 +135,17 @@ def tts(request: TTSRequestModel):
     temperature = config.temperature
     unique_model = config.unique_model
 
-    if config.use_cuda or not config.use_mp:
-        wavs = worker_onnx_audio(text, speaker_id=speaker_id, model_path=model_path, unique_model=unique_model,
-                                 vocoder_path=vocoder_path,
-                                 use_aliases=speaker_config_attributes["use_aliases"],
-                                 new_speaker_ids=speaker_config_attributes["new_speaker_ids"], use_cuda=use_cuda,
-                                 temperature=temperature, speaking_rate=speech_rate)
 
-        wavs = list(np.squeeze(wavs))
-        out = io.BytesIO()
-        save_wav(wavs, out)
+    wavs = worker_onnx_audio(text, speaker_id=speaker_id, model_path=model_path, unique_model=unique_model,
+                                vocoder_path=vocoder_path,
+                                use_aliases=speaker_config_attributes["use_aliases"],
+                                new_speaker_ids=speaker_config_attributes["new_speaker_ids"], use_cuda=use_cuda,
+                                temperature=temperature, speaking_rate=speech_rate)
 
-    else:
-
-        sentences = segmenter.segment(text)  # list with pieces of long text input
-        print("sentences are segmented well...")
-        mp_workers = config.mp_workers  # number of cpu's available for multiprocessing
-        manager = mp.Manager()  # manager to deal with processes and cpu's available in the multiprocessing
-        print("manager initialized correctly...")
-        sessions = manager.list([None] * mp_workers)  # create a list of ID's of sessions
-        print("list of sessions correctly set...")
-        print(len(sessions))
-
-        # global sessions
-        # sessions = [init_session_workers(model_path, use_cuda) for _ in range(num_cpus)]
-
-        tasks = [(i % mp_workers, sentences[i]) for i in range(len(sentences))]
-
-        print("tasks initialized...")
-        print(tasks)
-
-        def worker_task(task):
-            session_index, sentence = task
-
-            global sessions
-
-            session = sessions[session_index]
-
-            # session = list(sessions)[session_index]  # this is the ONNX session I need to use for inference
-
-            print("session called for inference...")
-            # print(session)
-
-            wavs = worker_onnx(sentence, speaker_id=speaker_id, model=session, vocoder_model=None,
-                               use_aliases=speaker_config_attributes["use_aliases"],
-                               new_speaker_ids=speaker_config_attributes["new_speaker_ids"],
-                               temperature=temperature, speaking_rate=speech_rate)
-
-            return wavs
-
-        with mp.Pool(processes=mp_workers) as pool:
-            pool.starmap(init_session_workers, [(model_path, sessions, i, use_cuda) for i in range(mp_workers)])
-
-        # preload all sessions according to the number of workers available (num. of cpu's)
-        # ort_sessions = [load_onnx_tts_unique(model_path=model_path, use_cuda=use_cuda) for _ in mp_workers]
-
-        with mp.Pool(processes=mp_workers) as pool:
-            results = pool.map(worker_task, tasks)
-
-
-        '''
-        worker_with_args = partial(worker_onnx_audio, speaker_id=speaker_id, model_path=model_path,
-                                   unique_model=unique_model, vocoder_path=vocoder_path,
-                                   use_aliases=speaker_config_attributes["use_aliases"],
-                                   new_speaker_ids=speaker_config_attributes["new_speaker_ids"], use_cuda=use_cuda,
-                                   temperature=temperature, speaking_rate=speech_rate)
-
-        pool = mp.Pool(processes=mp_workers)
-
-        results = pool.map(worker_with_args, [sentence.strip() for sentence in sentences if sentence])
-        '''
-
-        list_of_results = [tensor.squeeze().tolist() for tensor in results]
-        # Close the pool to indicate that no more tasks will be submitted
-        pool.close()
-        # Wait for all processes to complete
-        pool.join()
-        merged_wavs = list(chain(*list_of_results))
-
-        out = io.BytesIO()
-
-        save_wav(merged_wavs, out)
+    wavs = list(np.squeeze(wavs))
+    out = io.BytesIO()
+    save_wav(wavs, out)
+ 
 
     return StreamingResponse(out, media_type="audio/wav")
 

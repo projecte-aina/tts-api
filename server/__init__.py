@@ -7,8 +7,8 @@ from server.views.health import health
 from server.views.api.api import route
 
 
-def create_app(model_path, vocoder_path, speaker_ids_path, speech_speed, temperature, mp_workers,
-               use_cuda, use_mp, args) -> FastAPI:
+def create_app(model_path, vocoder_path, speaker_ids_path, speech_speed, temperature,
+               use_cuda, args) -> FastAPI:
 
     app = FastAPI()
     
@@ -20,9 +20,7 @@ def create_app(model_path, vocoder_path, speaker_ids_path, speech_speed, tempera
             speaker_ids_path=speaker_ids_path, 
             speech_speed=speech_speed,
             temperature=temperature,
-            mp_workers=mp_workers, 
-            use_cuda=use_cuda, 
-            use_mp=use_mp,
+            use_cuda=use_cuda,
             unique_model=args.unique_model
         )
 

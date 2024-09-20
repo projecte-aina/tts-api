@@ -12,16 +12,14 @@ class APIBaseTestCase:
 class configBaseTestCase:
     def setup(self):
         config = Config(
-            model_path="models/vits_ca/best_model.pth", 
+            model_path="models/matxa_onnx/best_model.onnx", 
             config_path="models/vits_ca/config.json", 
             speakers_file_path=None, 
             vocoder_path=None, 
             vocoder_config_path=None, 
-            speaker_ids_path="models/vits_ca/speaker_ids.json", 
+            speaker_ids_path="models/matxa_onnx/speaker_ids.json", 
             speech_speed=1.0, 
-            mp_workers=1, 
             use_cuda=False, 
-            use_mp=False,
             show_details=True,
             args={}
         )

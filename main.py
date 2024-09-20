@@ -12,8 +12,8 @@ from server.utils.argparse import MpWorkersAction
 path_dir = os.path.dirname(Path(__file__))
 # Set the relative paths for the default TTS model and its associated configuration
 models_path_rel = f'{path_dir}/models/matxa_onnx'
-model_name = 'matcha_wavenext.onnx'
-vocoder_name = 'matcha_wavenext.onnx'
+model_name = 'best_model.onnx'
+vocoder_name = 'best_model.onnx'
 spk_ids_file = 'spk_ids.json'
 
 model_ca = os.path.join(models_path_rel, model_name)
@@ -44,14 +44,8 @@ def create_argparser():
                         default=True)
     parser.add_argument("--port", type=int, default=8000, help="port to listen on.")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="host ip to listen.")
-    parser.add_argument("--use_mp", type=convert_boolean, default=False, nargs='?', const=True,
-                        help="true to use Python multi-processing.")
-    parser.add_argument("--use_mth", type=convert_boolean, default=True, nargs='?', const=True,
-                        help="true to use Python multi-threading.")
     parser.add_argument("--use_cuda", type=convert_boolean, default=False, nargs='?', const=False,
                         help="true to use CUDA.")
-    parser.add_argument("--mp_workers", action=MpWorkersAction, type=int, default=1,   # mp.cpu_count()
-                        nargs='?', const=1, help="number of CPUs used for multiprocessing")
     parser.add_argument("--debug", type=convert_boolean, default=False,
                         help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False,
@@ -93,9 +87,7 @@ app = create_app(
         speaker_ids_path=speaker_ids_path,
         speech_speed=args.speech_speed,
         temperature=args.temperature,
-        mp_workers=args.mp_workers,
         use_cuda=args.use_cuda,
-        use_mp=args.use_mp,
         args=args
     )
 

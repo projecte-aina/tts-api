@@ -7,12 +7,9 @@ services:
     container_name: fastapi-dev
     environment:
       - SPEECH_SPEED=${SPEECH_SPEED-1.0}
-      - MP_WORKERS=${MP_WORKERS-4}
-      - USE_MP=False
     restart: always
     volumes:
       - .:/app
-
     ports:
-      - '8080:8000'
+      - '8000:8000'
     shm_size: ${SHM_SIZE-2gb}

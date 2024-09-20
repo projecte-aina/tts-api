@@ -59,7 +59,7 @@ tts-api has three inference endpoints, two openapi ones (as can be seen via `/do
 The example for `/api/tts` can be found in `/docs`. The websocket request is contingent on the communication with the client, hence we provide an example client at the `/websocket-demo` endpoint. For the `api/tts` the call is as the following:
 
 ```
-curl --location --request POST 'http://localhost:8080/api/tts' --header 'Content-Type: application/json' --data-raw '{
+curl --location --request POST 'http://localhost:8000/api/tts' --header 'Content-Type: application/json' --data-raw '{
     "voice": "f_cen_81",
     "type": "text",
     "text": "El Consell s’ha reunit avui per darrera vegada abans de les eleccions. Divendres vinent, tant el president com els consellers ja estaran en funcions. A l’ordre del dia d’avui tampoc no hi havia l’aprovació del requisit lingüístic, és a dir la normativa que ha de regular la capacitació lingüística dels aspirants a accedir a un lloc en la Funció Pública Valenciana.",
@@ -73,7 +73,7 @@ To launch using lastest version available on the Dockerhub:
 
 
 ```
-docker run --shm-size=1gb -p 8080:8000 projecteaina/tts-api:latest
+docker run -p 8000:8000 projecteaina/tts-api:latest
 ```
 
 [Check out the documentation available on the Dockerhub](https://hub.docker.com/r/projecteaina/tts-api)
@@ -87,9 +87,9 @@ docker build -t tts-api .
 
 To launch:
 ```
-docker run --shm-size=1gb -p 8080:8000 tts-api
+docker run -p 8000:8000 tts-api
 ```
-The default entrypoint puts the web interface to `http://0.0.0.0:8080/`.
+The default entrypoint puts the web interface to `http://0.0.0.0:8000/`.
 
 
 ## Develop in docker
@@ -102,7 +102,14 @@ make dev
 ```
 
 > [!NOTE]
-> The model **best_model.pth** is requiered, you have to download by yourself.
+> The model **best_model.onnx** is requiered, you have to download by yourself.
+
+Download the model from HuggingFace
+https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matcha_multispeaker_cat_all_opset_15_10_steps.onnx
+
+Note: You will need a Huggingface account because the model privacity is setted to gated.
+
+Rename the onnx model to best_model.onnx and move it to /models/matxa_onnx folder
 ```bash
 wget -q http://share.laklak.eu/model_vits_ca/best_model_8khz.pth -P models/vits_ca/
 ```
@@ -128,7 +135,7 @@ mv models/vits_ca/best_model_8khz.pth models/vits_ca/best_model.pth
 
 **NOTES:** 
 - ssml format is not available yet.
-- Currently, only "ca-es" language is supported, and will be applied by default
+- Currently, only "ca-ba, ca-nw, ca-va" directions are supported, and will be applied by default
 
 **Successful Response:**
 
@@ -151,10 +158,9 @@ POST /api/tts
 #### Command line deployment arguments
 | **Argument**           | **Type** | **Default**                             | **Description**                                                               |
 |------------------------|----------|-----------------------------------------|-------------------------------------------------------------------------------|
-| mp_workers             | int      | 2                                       | Number of CPUs used for multiprocessing.                                      |
 | speech_speed           | float    | 1.0                                     | Change the speech speed.                                                      |
 
-- mp_workers: the "mp_workers" argument specifies the number of separate processes used for inference. For example, if mp_workers is set to 2 and the input consists of 2 sentences, there will be a process assigned to each sentence, speeding up  inference.
+
 
 - The "speech_speed" argument refers to a parameter that adjusts the rate at which speech sounds in an audio output, with higher values resulting in faster speech, and lower values leading to slower speech.
 
@@ -168,22 +174,14 @@ To deploy this project, you will need to add the following environment variables
 
 `SPEECH_SPEED`
 
-`MP_WORKERS`
-
 `USE_CUDA`
 
-`USE_MP`
-
-`SHM_SIZE`
 
 
 Example of .env file
 ```bash
 SPEECH_SPEED=1.0
-MP_WORKERS=4
 USE_CUDA=False
-USE_MP=True
-SHM_SIZE=2gb
 ```
 
 
