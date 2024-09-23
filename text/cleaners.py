@@ -33,13 +33,19 @@ global_phonemizer = phonemizer.backend.EspeakBackend(
     logger=critical_logger,
 )
 
-global_phonemizer_cat = phonemizer.backend.EspeakBackend(
-    language="ca",  # 'ca' if catalan
-    preserve_punctuation=True,
-    with_stress=True,
-    language_switch="remove-flags",
-    logger=critical_logger,
-)
+# global_phonemizer_cat = phonemizer.backend.EspeakBackend(
+#     language="ca",  # 'ca' if catalan
+#     preserve_punctuation=True,
+#     with_stress=True,
+#     language_switch="remove-flags",
+#     logger=critical_logger,
+# )
+
+
+backend_cat = phonemizer.backend.EspeakBackend("ca", preserve_punctuation=True, with_stress=True)
+backend_bal = phonemizer.backend.EspeakBackend("ca-ba", preserve_punctuation=True, with_stress=True)
+backend_val = phonemizer.backend.EspeakBackend("ca-va", preserve_punctuation=True, with_stress=True)
+backend_occ = phonemizer.backend.EspeakBackend("ca-nw", preserve_punctuation=True, with_stress=True)
 
 # Regular expression matching whitespace:
 _whitespace_re = re.compile(r"\s+")
@@ -115,13 +121,12 @@ def english_cleaners2(text):
 
 
 def catalan_cleaners(text):
-    """Pipeline for Catalan text, including abbreviation expansion. + punctuation + stress"""
-    # text = convert_to_ascii(text)
+    """Pipeline for catalan text, including punctuation + stress"""
+    #text = convert_to_ascii(text)
     text = lowercase(text)
-    # text = expand_abbreviations(text)
-    phonemes = global_phonemizer_cat.phonemize([text], strip=True, njobs=1)[0]
+    #text = expand_abbreviations(text)
+    phonemes = backend_cat.phonemize([text], strip=True)[0]
     phonemes = collapse_whitespace(phonemes)
-    # print(phonemes)  # check punctuations!!
     return phonemes
 
 
@@ -130,7 +135,7 @@ def catalan_balear_cleaners(text):
     # text = convert_to_ascii(text)
     text = lowercase(text)
     # text = expand_abbreviations(text)
-    phonemes = global_phonemizer_cat_bal.phonemize([text], strip=True, njobs=1)[0]
+    phonemes = backend_bal.phonemize([text], strip=True, njobs=1)[0]
     phonemes = collapse_whitespace(phonemes)
     # print(phonemes)  # check punctuations!!
     return phonemes
@@ -141,7 +146,7 @@ def catalan_occidental_cleaners(text):
     # text = convert_to_ascii(text)
     text = lowercase(text)
     # text = expand_abbreviations(text)
-    phonemes = global_phonemizer_cat_occ.phonemize([text], strip=True, njobs=1)[0]
+    phonemes = backend_occ.phonemize([text], strip=True, njobs=1)[0]
     phonemes = collapse_whitespace(phonemes)
     # print(phonemes)  # check punctuations!!
     return phonemes
@@ -152,7 +157,7 @@ def catalan_valencia_cleaners(text):
     # text = convert_to_ascii(text)
     text = lowercase(text)
     # text = expand_abbreviations(text)
-    phonemes = global_phonemizer_cat_val.phonemize([text], strip=True, njobs=1)[0]
+    phonemes = backend_val.phonemize([text], strip=True, njobs=1)[0]
     phonemes = collapse_whitespace(phonemes)
     # print(phonemes)  # check punctuations!!
     return phonemes
