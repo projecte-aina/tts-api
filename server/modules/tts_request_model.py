@@ -12,8 +12,8 @@ class TTSRequestModel(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "language": "Foo",
-                    "voice": "f_cen_095",
+                    "language": "ca-es",
+                    "voice": "olga",
                     "type": "text",
                     "text": "hola que tal"
                 }

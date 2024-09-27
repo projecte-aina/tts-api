@@ -1,12 +1,15 @@
-version: '3.9'
 services:
   server:
     build:
       context: .
+      secrets:
+        - "HF_TOKEN"
     restart: unless-stopped
     ports:
       - '8000:8000'
-    shm_size: ${SHM_SIZE:-2g}
     environment:
       - SPEECH_SPEED=${SPEECH_SPEED:-0.9}  # Default to 0.9 if SPEECH_SPEED is not set
       - USE_CUDA=${USE_CUDA:-0}            # Default to 0 if USE_CUDA is not set
+secrets:
+  HF_TOKEN:
+    environment: "HF_TOKEN"

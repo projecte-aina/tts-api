@@ -34,3 +34,4 @@ _main.py
 # Exclude specific files or directories if needed for the Docker build
 # !important_file.py
 # !important_directory/
+models/matxa_onnx/best_model.onnx

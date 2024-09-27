@@ -41,18 +41,13 @@ jobs:
       
       - name: install espeak-ng
         run:  |
-          git clone -b dev-ca https://github.com/projecte-aina/espeak-ng
+          git clone https://github.com/espeak-ng/espeak-ng
           pip install --upgrade pip 
           cd espeak-ng && sudo ./autogen.sh && sudo ./configure --prefix=/usr && sudo make && sudo make install
 
-      - name: install lingua-franca
-        run: pip install git+https://github.com/MycroftAI/lingua-franca.git@5bfd75fe5996fd364102a0eec3f714c9ddc9275c
-
-      - name: install model
+      - name: download model
         run:  |
-          wget -q http://share.laklak.eu/model_vits_ca/best_model_8khz.pth -P ./models/vits_ca/
-          mv ./models/vits_ca/best_model_8khz.pth ./models/vits_ca/best_model.pth
-
+          wget --header="Authorization: Bearer ${{ secrets.HF_TOKEN }}" https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O ./models/matxa_onnx/best_model.onnx
       - name: Run tests
         run: pytest
 

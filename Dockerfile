@@ -1,7 +1,7 @@
 FROM python:3.10.12-slim
-# RUN apt-get update && apt-get install -y --no-install-recommends wget gcc g++ make python3 python3-dev python3-pip python3-venv python3-wheel espeak espeak-ng libsndfile1-dev && rm -rf /var/lib/apt/lists/*
 
 # Install required packages for building eSpeak and general utilities
+
 RUN apt-get update && apt-get install -y \
         build-essential \
         autoconf \
@@ -13,8 +13,15 @@ RUN apt-get update && apt-get install -y \
         cmake \ 
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone -b dev-ca https://github.com/projecte-aina/espeak-ng
+# download huggingface gated model
+RUN mkdir -p /app/models/matxa_onnx
 
+RUN --mount=type=secret,id=HF_TOKEN \
+    wget --header="Authorization: Bearer $(cat /run/secrets/HF_TOKEN)" https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O /app/models/matxa_onnx/best_model.onnx   
+
+# install espeak-ng
+
+RUN git clone https://github.com/espeak-ng/espeak-ng
 RUN pip install --upgrade pip && \
  cd espeak-ng && \
  ./autogen.sh && \

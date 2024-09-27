@@ -12,7 +12,7 @@ class TestApi(APIBaseTestCase):
 
     def test_text_to_voice(self):
         options = {
-            "voice": "f_cen_095",
+            "voice": "quin",
             "type": "text",
             "text": "hola"
         }
@@ -26,7 +26,7 @@ class TestApi(APIBaseTestCase):
     def test_text_to_voice_error(self):
         msg = {
             "message":"sfsfs is an unknown speaker id.",
-            "accept":["f_cen_095","f_cen_092","m_occ_072","m_cen_pau","m_occ_7b7","m_val_51c","f_cen_063","f_cen_051"]
+            "accept":["quim","olga","grau","elia","pere","emma","lluc","gina"]
             }
         options = {
             "voice": "sfsfs",
@@ -49,13 +49,13 @@ class TestApi(APIBaseTestCase):
 
         assert response.status_code == status.HTTP_200_OK
         voices = json.loads(response.content)["voices"]
-        assert voices == ["f_cen_095","f_cen_092","m_occ_072","m_cen_pau","m_occ_7b7","m_val_51c","f_cen_063","f_cen_051"]
+        assert voices == ["quim","olga","grau","elia","pere","emma","lluc","gina"]
 
 
     @pytest.mark.repeat(25)
     def test_multi_larger_text(self):
         options = {
-            "voice": "f_cen_095",
+            "voice": "quim",
             "type": "text",
             "text": ""
         }

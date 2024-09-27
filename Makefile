@@ -15,4 +15,4 @@ stop:
 
 
 act-run-tests:
-	gh act -j test -W '.github/workflows/tests.yml'
+	act --secret-file .env -j test -W '.github/workflows/tests.yml'

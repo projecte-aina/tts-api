@@ -13,7 +13,14 @@ RUN apt-get update && apt-get install -y \
         cmake \ 
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone -b dev-ca https://github.com/projecte-aina/espeak-ng
+# download huggingface gated model
+RUN mkdir -p /app/models/matxa_onnx
+
+RUN --mount=type=secret,id=HF_TOKEN \
+    wget --header="Authorization: Bearer $(cat /run/secrets/HF_TOKEN)" https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O /app/models/matxa_onnx/best_model.onnx   
+
+RUN git clone https://github.com/espeak-ng/espeak-ng
+
 
 RUN pip install --upgrade pip && \
  cd espeak-ng && \
@@ -22,11 +29,7 @@ RUN pip install --upgrade pip && \
  make && \
  make install
 
-RUN pip install git+https://github.com/MycroftAI/lingua-franca.git@5bfd75fe5996fd364102a0eec3f714c9ddc9275c
-
 WORKDIR /app
-# RUN wget -q http://share.laklak.eu/model_vits_ca/best_model_8khz.pth -P /app/models/vits_ca/
-# RUN mv /app/models/vits_ca/best_model_8khz.pth /app/models/vits_ca/best_model.pth
 
 COPY ./requirements.txt /app
 RUN python -m pip install --upgrade pip

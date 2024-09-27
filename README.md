@@ -1,10 +1,10 @@
 # TTS API
 
-RestFUL api and web interface to serve coqui TTS models
+RestFUL api and web interface to serve matcha TTS models
 
 ## Installation
 
-The requirements are tested for python 3.10. In order for coqui TTS to work, some dependencies should be installed.
+The requirements are tested for python 3.10. In order for matcha TTS to work, some dependencies should be installed.
 
 1. Update your system's package list and install the required packages for building eSpeak and general utilities:
 ```bash
@@ -18,9 +18,10 @@ sudo apt update && sudo apt install -y \
     wget \
     cmake
 ```
+
 2. Clone the eSpeak-ng repository and build it:
 ```bash
-git clone -b dev-ca https://github.com/projecte-aina/espeak-ng
+git clone https://github.com/espeak-ng/espeak-ng
 cd espeak-ng && \
  sudo ./autogen.sh && \
  sudo ./configure --prefix=/usr && \
@@ -34,14 +35,29 @@ Later simply:
 python -m pip install --upgrade pip
 ```
 
-In order to synthesize, the actual model needs to be downloaded and the paths in the config file need to be changed (replacing `/opt` with the top directory of the repository). The model can be downloaded from [http://share.laklak.eu/model_vits_ca/best_model.pth](http://share.laklak.eu/model_vits_ca/best_model.pth) to the models directory.
+
+> [!NOTE]
+> The model **best_model.onnx** is requiered, you have to download by yourself.
+
+Download the model from HuggingFace
+https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matcha_multispeaker_cat_all_opset_15_10_steps.onnx
+
+Note: You will need a Huggingface account because the model privacity is setted to gated.
+
+Rename the onnx model to best_model.onnx and move it to ./models/matxa_onnx folder
+
+or download using wget
+
+```bash
+wget --header="Authorization: Bearer REPLACE_WITH_YOUR_HF_TOKEN" https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O ./models/matxa_onnx/best_model.onnx
+```
 
 ## Launch
 
 tts-api uses `FastAPI` and `uvicorn` under the hood. For now, in order to launch:
 
 ```
-python server/server.py --model_path models/vits_ca/best_model.pth --config_path models/vits_ca/config.json --port 8001
+python server/server.py --model_path models/matxa_onnx/best_model.onnx --port 8001
 ```
 that receives the calls from `0.0.0.0:8001`, or simply
 ```
@@ -60,7 +76,7 @@ The example for `/api/tts` can be found in `/docs`. The websocket request is con
 
 ```
 curl --location --request POST 'http://localhost:8000/api/tts' --header 'Content-Type: application/json' --data-raw '{
-    "voice": "f_cen_81",
+    "voice": "quim",
     "type": "text",
     "text": "El Consell s’ha reunit avui per darrera vegada abans de les eleccions. Divendres vinent, tant el president com els consellers ja estaran en funcions. A l’ordre del dia d’avui tampoc no hi havia l’aprovació del requisit lingüístic, és a dir la normativa que ha de regular la capacitació lingüística dels aspirants a accedir a un lloc en la Funció Pública Valenciana.",
     "language": "ca-es" }' --output tts.wav
@@ -101,15 +117,6 @@ To run in dev mode run the following command.
 make dev
 ```
 
-> [!NOTE]
-> The model **best_model.onnx** is requiered, you have to download by yourself.
-
-Download the model from HuggingFace
-https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matcha_multispeaker_cat_all_opset_15_10_steps.onnx
-
-Note: You will need a Huggingface account because the model privacity is setted to gated.
-
-Rename the onnx model to best_model.onnx and move it to /models/matxa_onnx folder
 
 
 ## REST API Endpoints
@@ -122,7 +129,7 @@ Rename the onnx model to best_model.onnx and move it to /models/matxa_onnx folde
 
 | **Parameter** | **Type**           | **Description**                                            |
 |---------------|--------------------|------------------------------------------------------------|
-| language      | string             | ISO language code (e.g., "ca-es")                          |
+| language      | string             | ISO language code (e.g., "ca-es", "ca-ba", "ca-nw", "ca-va")                          |
 | voice         | string             | Name of the voice to use                                   |
 | type          | string             | Type of input text ("text" or "ssml")                      |
 | text          | string             | Text to be synthesized (if type is "ssml", enclose in tags) |
@@ -130,7 +137,6 @@ Rename the onnx model to best_model.onnx and move it to /models/matxa_onnx folde
 
 **NOTES:** 
 - ssml format is not available yet.
-- Currently, only "ca-ba, ca-nw, ca-va" directions are supported, and will be applied by default
 
 **Successful Response:**
 
