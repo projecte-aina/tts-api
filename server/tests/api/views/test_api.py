@@ -12,7 +12,7 @@ class TestApi(APIBaseTestCase):
 
     def test_text_to_voice(self):
         options = {
-            "voice": "quin",
+            "voice": "quim",
             "type": "text",
             "text": "hola"
         }
