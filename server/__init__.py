@@ -1,33 +1,27 @@
 from fastapi import FastAPI
 
-from server.helper.config import Config
+from server.helper.config import ConfigONNX
 from server.exceptions import LanguageException, SpeakerException
 from server.exception_handler import language_exception_handler, speaker_exception_handler
 from server.views.health import health
 from server.views.api.api import route
 
 
-def create_app(model_path, config_path, speakers_file_path, 
-        vocoder_path, vocoder_config_path, speaker_ids_path, 
-        speech_speed, mp_workers, use_cuda, use_mp, show_details, args) -> FastAPI:
+def create_app(model_path, vocoder_path, speaker_ids_path, speech_speed, temperature,
+               use_cuda, args) -> FastAPI:
 
     app = FastAPI()
     
     @app.on_event("startup")
     async def startup_event():
-        config = Config(
-            model_path=model_path, 
-            config_path=config_path, 
-            speakers_file_path=speakers_file_path, 
-            vocoder_path=vocoder_path, 
-            vocoder_config_path=vocoder_config_path, 
+        config = ConfigONNX(
+            model_path=model_path,
+            vocoder_path=vocoder_path,
             speaker_ids_path=speaker_ids_path, 
-            speech_speed=speech_speed, 
-            mp_workers=mp_workers, 
-            use_cuda=use_cuda, 
-            use_mp=use_mp,
-            show_details=show_details,
-            args=args
+            speech_speed=speech_speed,
+            temperature=temperature,
+            use_cuda=use_cuda,
+            unique_model=args.unique_model
         )
 
     app.add_exception_handler(SpeakerException, speaker_exception_handler)

@@ -1,13 +1,15 @@
-version: '3.9'
 services:
   server:
     build:
       context: .
-    environment:
-      - SPEECH_SPEED=${SPEECH_SPEED}
-      - MP_WORKERS=${MP_WORKERS}
-      - USE_MP=${USE_MP}
+      secrets:
+        - "HF_TOKEN"
     restart: unless-stopped
     ports:
-      - '8080:8000'
-    shm_size: ${SHM_SIZE}
+      - '8000:8000'
+    environment:
+      - SPEECH_SPEED=${SPEECH_SPEED:-0.9}  # Default to 0.9 if SPEECH_SPEED is not set
+      - USE_CUDA=${USE_CUDA:-0}            # Default to 0 if USE_CUDA is not set
+secrets:
+  HF_TOKEN:
+    environment: "HF_TOKEN"

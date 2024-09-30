@@ -1,15 +1,37 @@
-**/.git
-**/.gitignore
-**/.vscode
-**/coverage
-**/.env
-**/.ssh
-Dockerfile
-README.md
-docker-compose.yml
-**/.DS_Store
-**/venv
-**/env
-**/__pycache__
-charts
+# Ignore the virtual environment directory
+venv
+
+# Ignore Python cache files
+__pycache__
+
+# Ignore environment and dependency files
+*.env
+*.log
+*.tmp
+
+# Ignore configuration and metadata files
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+docker-compose*.yml
+LICENSE.txt
 Makefile
+README.md
+SECURITY.md
+
+# Ignore specific scripts and files
+infer_wavenext_onnx.py
+_main.py
+
+# Ignore any other .md files
+*.md
+
+# Ignore any other temporary or unnecessary files
+*.swp
+*.bak
+*.tmp
+*.orig
+
+# Exclude specific files or directories if needed for the Docker build
+# !important_file.py
+# !important_directory/
+models/matxa_onnx/best_model.onnx

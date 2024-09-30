@@ -1,10 +1,10 @@
 # TTS API
 
-RestFUL api and web interface to serve coqui TTS models
+RestFUL api and web interface to serve matcha TTS models
 
 ## Installation
 
-The requirements are tested for python 3.10. In order for coqui TTS to work, some dependencies should be installed.
+The requirements are tested for python 3.10. In order for matcha TTS to work, some dependencies should be installed.
 
 1. Update your system's package list and install the required packages for building eSpeak and general utilities:
 ```bash
@@ -18,9 +18,10 @@ sudo apt update && sudo apt install -y \
     wget \
     cmake
 ```
+
 2. Clone the eSpeak-ng repository and build it:
 ```bash
-git clone -b dev-ca https://github.com/projecte-aina/espeak-ng
+git clone https://github.com/espeak-ng/espeak-ng
 cd espeak-ng && \
  sudo ./autogen.sh && \
  sudo ./configure --prefix=/usr && \
@@ -34,14 +35,29 @@ Later simply:
 python -m pip install --upgrade pip
 ```
 
-In order to synthesize, the actual model needs to be downloaded and the paths in the config file need to be changed (replacing `/opt` with the top directory of the repository). The model can be downloaded from [http://share.laklak.eu/model_vits_ca/best_model.pth](http://share.laklak.eu/model_vits_ca/best_model.pth) to the models directory.
+
+> [!NOTE]
+> The model **best_model.onnx** is requiered, you have to download by yourself.
+
+Download the model from HuggingFace
+https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matcha_multispeaker_cat_all_opset_15_10_steps.onnx
+
+Note: You will need a Huggingface account because the model privacity is setted to gated.
+
+Rename the onnx model to best_model.onnx and move it to ./models/matxa_onnx folder
+
+or download using wget
+
+```bash
+wget --header="Authorization: Bearer REPLACE_WITH_YOUR_HF_TOKEN" https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O ./models/matxa_onnx/best_model.onnx
+```
 
 ## Launch
 
 tts-api uses `FastAPI` and `uvicorn` under the hood. For now, in order to launch:
 
 ```
-python server/server.py --model_path models/vits_ca/best_model.pth --config_path models/vits_ca/config.json --port 8001
+python server/server.py --model_path models/matxa_onnx/best_model.onnx --port 8001
 ```
 that receives the calls from `0.0.0.0:8001`, or simply
 ```
@@ -51,16 +67,16 @@ which gets the calls from `0.0.0.0:8000` by default
 
 ## Usage
 
-tts-api has three inference endpoints, two openapi ones (as can be seen via `/docs`) and one websocket endpoint:
+tts-api has three inference endpoints, two openapi ones (as can be seen via `/docs`)
 
 * `/api/tts`: main inference endpoint
-* `/audio-stream`: websocket endpoint; capable of doing async inference, as soon as the first segment is synthesized the audio starts streaming.
+#
 
-The example for `/api/tts` can be found in `/docs`. The websocket request is contingent on the communication with the client, hence we provide an example client at the `/websocket-demo` endpoint. For the `api/tts` the call is as the following:
+The example for `/api/tts` can be found in `/docs`. For the `api/tts` the call is as the following:
 
 ```
-curl --location --request POST 'http://localhost:8080/api/tts' --header 'Content-Type: application/json' --data-raw '{
-    "voice": "f_cen_81",
+curl --location --request POST 'http://localhost:8000/api/tts' --header 'Content-Type: application/json' --data-raw '{
+    "voice": "quim",
     "type": "text",
     "text": "El Consell s’ha reunit avui per darrera vegada abans de les eleccions. Divendres vinent, tant el president com els consellers ja estaran en funcions. A l’ordre del dia d’avui tampoc no hi havia l’aprovació del requisit lingüístic, és a dir la normativa que ha de regular la capacitació lingüística dels aspirants a accedir a un lloc en la Funció Pública Valenciana.",
     "language": "ca-es" }' --output tts.wav
@@ -73,7 +89,7 @@ To launch using lastest version available on the Dockerhub:
 
 
 ```
-docker run --shm-size=1gb -p 8080:8000 projecteaina/tts-api:latest
+docker run -p 8000:8000 projecteaina/tts-api:latest
 ```
 
 [Check out the documentation available on the Dockerhub](https://hub.docker.com/r/projecteaina/tts-api)
@@ -87,9 +103,9 @@ docker build -t tts-api .
 
 To launch:
 ```
-docker run --shm-size=1gb -p 8080:8000 tts-api
+docker run -p 8000:8000 tts-api
 ```
-The default entrypoint puts the web interface to `http://0.0.0.0:8080/`.
+The default entrypoint puts the web interface to `http://0.0.0.0:8000/`.
 
 
 ## Develop in docker
@@ -101,14 +117,7 @@ To run in dev mode run the following command.
 make dev
 ```
 
-> [!NOTE]
-> The model **best_model.pth** is requiered, you have to download by yourself.
-```bash
-wget -q http://share.laklak.eu/model_vits_ca/best_model_8khz.pth -P models/vits_ca/
-```
-```bash
-mv models/vits_ca/best_model_8khz.pth models/vits_ca/best_model.pth
-```
+
 
 ## REST API Endpoints
 
@@ -120,7 +129,7 @@ mv models/vits_ca/best_model_8khz.pth models/vits_ca/best_model.pth
 
 | **Parameter** | **Type**           | **Description**                                            |
 |---------------|--------------------|------------------------------------------------------------|
-| language      | string             | ISO language code (e.g., "ca-es")                          |
+| language      | string             | ISO language code (e.g., "ca-es", "ca-ba", "ca-nw", "ca-va")                          |
 | voice         | string             | Name of the voice to use                                   |
 | type          | string             | Type of input text ("text" or "ssml")                      |
 | text          | string             | Text to be synthesized (if type is "ssml", enclose in tags) |
@@ -128,7 +137,6 @@ mv models/vits_ca/best_model_8khz.pth models/vits_ca/best_model.pth
 
 **NOTES:** 
 - ssml format is not available yet.
-- Currently, only "ca-es" language is supported, and will be applied by default
 
 **Successful Response:**
 
@@ -151,10 +159,9 @@ POST /api/tts
 #### Command line deployment arguments
 | **Argument**           | **Type** | **Default**                             | **Description**                                                               |
 |------------------------|----------|-----------------------------------------|-------------------------------------------------------------------------------|
-| mp_workers             | int      | 2                                       | Number of CPUs used for multiprocessing.                                      |
 | speech_speed           | float    | 1.0                                     | Change the speech speed.                                                      |
 
-- mp_workers: the "mp_workers" argument specifies the number of separate processes used for inference. For example, if mp_workers is set to 2 and the input consists of 2 sentences, there will be a process assigned to each sentence, speeding up  inference.
+
 
 - The "speech_speed" argument refers to a parameter that adjusts the rate at which speech sounds in an audio output, with higher values resulting in faster speech, and lower values leading to slower speech.
 
@@ -168,22 +175,16 @@ To deploy this project, you will need to add the following environment variables
 
 `SPEECH_SPEED`
 
-`MP_WORKERS`
-
 `USE_CUDA`
 
-`USE_MP`
-
-`SHM_SIZE`
+`HF_TOKEN` #Required if you build the docker image from this repository, you need a Huggingface token to download the tts model.
 
 
 Example of .env file
 ```bash
 SPEECH_SPEED=1.0
-MP_WORKERS=4
 USE_CUDA=False
-USE_MP=True
-SHM_SIZE=2gb
+HF_TOKEN=REPLACE_WITH_YOUR_HUGGINGFACE_TOKEN
 ```
 
 

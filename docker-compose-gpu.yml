@@ -3,15 +3,14 @@ services:
   server:
     build:
       context: .
+      secrets:
+        - "HF_TOKEN"
     environment:
       - SPEECH_SPEED=${SPEECH_SPEED}
-      - MP_WORKERS=${MP_WORKERS}
       - USE_CUDA=True
-      - USE_MP=${USE_MP}
     restart: unless-stopped
     ports:
-      - '8080:8000'
-    shm_size: ${SHM_SIZE}
+      - '8000:8000'
     deploy:
       resources:
         reservations:
@@ -19,3 +18,6 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+secrets:
+  HF_TOKEN:
+    environment: "HF_TOKEN"
