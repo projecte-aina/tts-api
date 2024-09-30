@@ -67,13 +67,12 @@ which gets the calls from `0.0.0.0:8000` by default
 
 ## Usage
 
-tts-api has three inference endpoints, two openapi ones (as can be seen via `/docs`) and one websocket endpoint:
+tts-api has three inference endpoints, two openapi ones (as can be seen via `/docs`)
 
 * `/api/tts`: main inference endpoint
-* `/audio-stream`: websocket endpoint; capable of doing async inference, as soon as the first segment is synthesized the audio starts streaming. **Not working for now...**
 #
 
-The example for `/api/tts` can be found in `/docs`. The websocket request is contingent on the communication with the client, hence we provide an example client at the `/websocket-demo` endpoint. For the `api/tts` the call is as the following:
+The example for `/api/tts` can be found in `/docs`. For the `api/tts` the call is as the following:
 
 ```
 curl --location --request POST 'http://localhost:8000/api/tts' --header 'Content-Type: application/json' --data-raw '{

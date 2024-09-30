@@ -7,7 +7,6 @@ import io
 import numpy as np
 from fastapi import APIRouter
 from starlette.responses import JSONResponse
-from starlette.websockets import WebSocket
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi import Request
 from functools import partial
@@ -19,7 +18,6 @@ from fastapi.templating import Jinja2Templates
 # from TTS.config import load_config
 
 from server.modules.tts_request_model import TTSRequestModel
-from server.audio_utils.audio_utils import generate_audio, play_audio
 from server.exceptions import LanguageException, SpeakerException
 from server.helper.config import ConfigONNX
 from server.workers.workers import worker_onnx_audio_multiaccent
@@ -48,12 +46,6 @@ def parameters():
     return JSONResponse(
         content={"speech_speed": config.speech_speed, "use_cuda": config.use_cuda},
     )
-
-
-@route.get("/websocket-demo", response_class=HTMLResponse)
-def websocket_demo(request: Request):
-    speaker_config_attributes = ConfigONNX().speakerConfigAttributes.__dict__
-    return templates.TemplateResponse("websocket_demo.html",{"request": request, **speaker_config_attributes})
 
 '''
 @route.get("/details", response_class=HTMLResponse)
@@ -217,30 +209,3 @@ def tts(request: TTSRequestModel):
         # save_wav(merged_wavs, out)
 
     return StreamingResponse(out, media_type="audio/wav")
-
-
-@route.websocket_route("/audio-stream")
-async def stream_audio(websocket: WebSocket):
-    await websocket.accept()
-
-    audio_queue = asyncio.Queue()
-
-    try:
-        while True:
-            received_data = await websocket.receive_json()
-
-            sentences = segmenter.segment(received_data.get("text"))
-            voice = received_data.get("voice")
-            language = received_data.get("language")
-
-            # create a separate task for audio generation
-            generator_task = asyncio.create_task(generate_audio(sentences, voice, langauge, audio_queue))
-
-            # create a task for audio playing
-            player_task = asyncio.create_task(play_audio(audio_queue, websocket))
-
-            # wait for both tasks to complete
-            await asyncio.gather(generator_task, player_task)
-
-    except Exception as e:
-        traceback.print_exc()
