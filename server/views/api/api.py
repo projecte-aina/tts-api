@@ -46,7 +46,7 @@ def index(request: Request):
 def parameters():
     config = ConfigONNX()
     return JSONResponse(
-        content={"speech_speed": config.speech_speed, "mp_workers": config.mp_workers, "use_cuda": config.use_cuda},
+        content={"speech_speed": config.speech_speed, "use_cuda": config.use_cuda},
     )
 
 
@@ -231,9 +231,10 @@ async def stream_audio(websocket: WebSocket):
 
             sentences = segmenter.segment(received_data.get("text"))
             voice = received_data.get("voice")
+            language = received_data.get("language")
 
             # create a separate task for audio generation
-            generator_task = asyncio.create_task(generate_audio(sentences, voice, audio_queue))
+            generator_task = asyncio.create_task(generate_audio(sentences, voice, langauge, audio_queue))
 
             # create a task for audio playing
             player_task = asyncio.create_task(play_audio(audio_queue, websocket))

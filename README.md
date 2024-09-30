@@ -70,7 +70,8 @@ which gets the calls from `0.0.0.0:8000` by default
 tts-api has three inference endpoints, two openapi ones (as can be seen via `/docs`) and one websocket endpoint:
 
 * `/api/tts`: main inference endpoint
-* `/audio-stream`: websocket endpoint; capable of doing async inference, as soon as the first segment is synthesized the audio starts streaming.
+* `/audio-stream`: websocket endpoint; capable of doing async inference, as soon as the first segment is synthesized the audio starts streaming. **Not working for now...**
+#
 
 The example for `/api/tts` can be found in `/docs`. The websocket request is contingent on the communication with the client, hence we provide an example client at the `/websocket-demo` endpoint. For the `api/tts` the call is as the following:
 
@@ -177,12 +178,14 @@ To deploy this project, you will need to add the following environment variables
 
 `USE_CUDA`
 
+`HF_TOKEN` #Required if you build the docker image from this repository, you need a Huggingface token to download the tts model.
 
 
 Example of .env file
 ```bash
 SPEECH_SPEED=1.0
 USE_CUDA=False
+HF_TOKEN=REPLACE_WITH_YOUR_HUGGINGFACE_TOKEN
 ```
 
 
