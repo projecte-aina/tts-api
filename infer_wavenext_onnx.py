@@ -121,7 +121,7 @@ def main():
     args = validate_args(args)
 
     if args.gpu:
-        providers = ["GPUExecutionProvider"]
+        providers = ["CUDAExecutionProvider"]
     else:
         providers = ["CPUExecutionProvider"]
     model = ort.InferenceSession(args.model, providers=providers)

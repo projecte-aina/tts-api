@@ -243,7 +243,7 @@ def load_onnx_tts(model_path, vocoder_path, use_cuda):
     s_opts.inter_op_num_threads = 1
 
     if use_cuda:
-        providers = ["GPUExecutionProvider"]
+        providers = ["CUDAExecutionProvider"]
     else:
         providers = ["CPUExecutionProvider"]
 
@@ -261,7 +261,7 @@ def load_onnx_tts_unique(model_path, use_cuda):
     # s_opts.intra_op_num_threads = 3  # total number of CPU's
 
     if use_cuda:
-        providers = ["GPUExecutionProvider"]
+        providers = ["CUDAExecutionProvider"]
     else:
         providers = ["CPUExecutionProvider"]
 
