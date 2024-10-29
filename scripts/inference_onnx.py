@@ -239,7 +239,7 @@ def save_wav(wav: List[int], path: str, pipe_out=None) -> None:
 def load_onnx_tts(model_path, vocoder_path, use_cuda):
 
     s_opts = ort.SessionOptions()
-    s_opts.intra_op_num_threads = 2
+    s_opts.intra_op_num_threads = 1
     s_opts.inter_op_num_threads = 1
 
     if use_cuda:
