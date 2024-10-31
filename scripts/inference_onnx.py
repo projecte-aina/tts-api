@@ -239,11 +239,11 @@ def save_wav(wav: List[int], path: str, pipe_out=None) -> None:
 def load_onnx_tts(model_path, vocoder_path, use_cuda):
 
     s_opts = ort.SessionOptions()
-    s_opts.intra_op_num_threads = 2
+    s_opts.intra_op_num_threads = 1
     s_opts.inter_op_num_threads = 1
 
     if use_cuda:
-        providers = ["CUDAExecutionProvider"]
+        providers = [("CUDAExecutionProvider", {"cudnn_conv_algo_search": "DEFAULT"}), "CPUExecutionProvider"]
     else:
         providers = ["CPUExecutionProvider"]
 
@@ -256,12 +256,11 @@ def load_onnx_tts(model_path, vocoder_path, use_cuda):
 def load_onnx_tts_unique(model_path, use_cuda):
 
     s_opts = ort.SessionOptions()
-    s_opts.intra_op_num_threads = 1  # amb 8 varios cops tira a 0.29 segons  / amb 1 varios cops sobre 0.60 segons
+    s_opts.intra_op_num_threads = 1
     s_opts.inter_op_num_threads = 1
-    # s_opts.intra_op_num_threads = 3  # total number of CPU's
 
     if use_cuda:
-        providers = ["CUDAExecutionProvider"]
+        providers = [("CUDAExecutionProvider", {"cudnn_conv_algo_search": "DEFAULT"}), "CPUExecutionProvider"]
     else:
         providers = ["CPUExecutionProvider"]
 
