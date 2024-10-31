@@ -3,8 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-      secrets:
-        - "HF_TOKEN"
     container_name: fastapi-dev
     environment:
       - SPEECH_SPEED=${SPEECH_SPEED-1.0}
@@ -13,6 +11,3 @@ services:
       - .:/app
     ports:
       - '8000:8000'
-secrets:
-  HF_TOKEN:
-    environment: "HF_TOKEN"

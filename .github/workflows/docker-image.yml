@@ -30,7 +30,5 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          secrets: |
-            HF_TOKEN=${{ secrets.HF_TOKEN }}
           push: true
           tags: projecteaina/tts-api:latest, projecteaina/tts-api:${{ github.sha }}

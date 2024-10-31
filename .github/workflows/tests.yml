@@ -47,7 +47,7 @@ jobs:
 
       - name: download model
         run:  |
-          wget --header="Authorization: Bearer ${{ secrets.HF_TOKEN }}" https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O ./models/matxa_onnx/best_model.onnx
+          wget https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O ./models/matxa_onnx/best_model.onnx
       - name: Run tests
         run: pytest
 
