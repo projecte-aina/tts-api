@@ -13,12 +13,10 @@ RUN apt-get update && apt-get install -y \
         cmake \ 
     && rm -rf /var/lib/apt/lists/*
 
-# download huggingface gated model
+# download huggingface model
 RUN mkdir -p /app/models/matxa_onnx
-
-RUN --mount=type=secret,id=HF_TOKEN \
-    wget --header="Authorization: Bearer $(cat /run/secrets/HF_TOKEN)" https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O /app/models/matxa_onnx/best_model.onnx   
-
+    
+RUN wget https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O /app/models/matxa_onnx/best_model.onnx
 # install espeak-ng
 
 RUN git clone https://github.com/espeak-ng/espeak-ng

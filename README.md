@@ -49,7 +49,7 @@ Rename the onnx model to best_model.onnx and move it to ./models/matxa_onnx fold
 or download using wget
 
 ```bash
-wget --header="Authorization: Bearer REPLACE_WITH_YOUR_HF_TOKEN" https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O ./models/matxa_onnx/best_model.onnx
+wget https://huggingface.co/projecte-aina/matxa-tts-cat-multiaccent/resolve/main/matxa_multiaccent_wavenext_e2e.onnx -O ./models/matxa_onnx/best_model.onnx
 ```
 
 ## Launch
@@ -177,14 +177,11 @@ To deploy this project, you will need to add the following environment variables
 
 `USE_CUDA`
 
-`HF_TOKEN` #Required if you build the docker image from this repository, you need a Huggingface token to download the tts model.
-
 
 Example of .env file
 ```bash
 SPEECH_SPEED=1.0
 USE_CUDA=False
-HF_TOKEN=REPLACE_WITH_YOUR_HUGGINGFACE_TOKEN
 ```
 
 
