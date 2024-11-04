@@ -44,13 +44,13 @@ def create_argparser():
                         default=True)
     parser.add_argument("--port", type=int, default=8000, help="port to listen on.")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="host ip to listen.")
-    parser.add_argument("--use_cuda", type=convert_boolean, default=False, nargs='?', const=False,
+    parser.add_argument("--use_cuda", type=convert_boolean, default=os.environ.get("USE_CUDA", False), nargs='?', const=False,
                         help="true to use CUDA.")
     parser.add_argument("--debug", type=convert_boolean, default=False,
                         help="true to enable Flask debug mode.")
     parser.add_argument("--show_details", type=convert_boolean, default=False,
                         help="Generate model detail page.")
-    parser.add_argument("--speech_speed", type=float, default=0.9, nargs='?', const=1.0,
+    parser.add_argument("--speech_speed", type=float, default=os.environ.get("SPEECH_SPEED", 0.9), nargs='?', const=1.0,
                         help="Change speech speed.")
     parser.add_argument("--temperature", type=float, default=0.4, nargs='?', const=1.0,
                         help="Set temperature of inference.")
